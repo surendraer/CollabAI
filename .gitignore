@@ -3,12 +3,17 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # ===== Environment Variables =====
 # Ignore ALL .env files in any directory
 **/.env
 **/.env.local
+**/.env.*.local
 **/.env.development.local
 **/.env.test.local
 **/.env.production.local
@@ -16,16 +21,19 @@ yarn-error.log*
 # DO NOT ignore .env.example
 !**/.env.example
 
-# ===== Build & Production =====
+# ===== Build & Production Outputs =====
 dist/
 build/
 out/
 .next/
 server/dist/
 client/dist/
+client/dist-ssr/
+client/.vite/
 
 # ===== Logs & Temporary Files =====
 logs/
+logs.log
 *.log
 *.tmp
 *.temp
@@ -41,21 +49,86 @@ coverage/
 .Trashes
 ehthumbs.db
 Thumbs.db
+Desktop.ini
 
 # ===== IDEs and Editors =====
-.vscode/
+.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/local.settings.json
 .idea/
+.project
+.classpath
+.c9/
+*.sublime-workspace
+*.tern-port
 *.swp
 *.swo
+*~
+.vim
+*.code-workspace
+
+# ===== Documentation & Reference Files =====
+# Keep important project documentation, ignore generated reference docs
+# Important project files (keep)
+!README.md
+!**/README.md
+!DEPLOYMENT.md
+!PHASE_1_COMPLETE.md
+!plan-*.prompt.md
+
+# Generated/temporary reference docs (ignore)
+NOTES.md
+notes.md
+TODO.md
+todo.md
+PROJECT_STATUS.md
+project-status.md
+
+# Design files (ignore - these are temporary references)
+design.md
+DESIGN_TEMP.md
+spec.md
+SPEC_TEMP.md
+architecture_notes.md
+ARCHITECTURE_NOTES.md
+**/*.sketch
+**/*.fig
+**/*.xd
+
+# ===== Package Manager Files (lock files for workspaces) =====
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+npm-shrinkwrap.json
 
 # ===== Framework Specific =====
 # Vite
-client/.vite/
-client/dist-ssr/
+.vite/
+
+# Next.js
+.next/
+out/
 
 # TypeScript
 *.tsbuildinfo
+*.tsbuildinfo.json
+
+# ===== Testing =====
+.jest_cache/
+.nyc_output/
+*.lcov
+
+# ===== VS Code Extensions =====
+.vscode-test/
+.vscode-download/
+
+# ===== Miscellaneous =====
+.cache/
+.env.local.js
+.eslintcache
+.stylelintcache
+.prettierignore
+.prettierrc*

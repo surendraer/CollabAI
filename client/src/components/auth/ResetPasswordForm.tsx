@@ -24,10 +24,10 @@ export function ResetPasswordForm() {
       transition={{ duration: 0.5 }}
     >
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--foreground)]">
+        <h1 className="text-3xl font-bold text-ink" style={{ letterSpacing: "-0.02em" }}>
           Reset your password
         </h1>
-        <p className="mt-2 text-[var(--muted-foreground)]">
+        <p className="mt-2 text-ink-muted">
           Choose a new password for your account
         </p>
       </div>
@@ -37,26 +37,26 @@ export function ResetPasswordForm() {
         <div className="space-y-2">
           <label
             htmlFor="reset-password"
-            className="text-sm font-medium text-[var(--foreground)]"
+            className="text-sm font-medium text-ink"
           >
             New Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
             <input
               id="reset-password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min 8 chars, uppercase, lowercase, number"
+              placeholder="Min 8 chars"
               required
               minLength={8}
-              className="h-11 w-full rounded-lg border border-[var(--input)] bg-[var(--background)] pl-10 pr-10 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]/20"
+              className="h-11 w-full rounded-xs border border-hairline bg-surface pl-10 pr-10 text-sm text-ink placeholder:text-ink-muted outline-none transition-colors focus:border-primary focus:shadow-soft"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -71,12 +71,12 @@ export function ResetPasswordForm() {
         <div className="space-y-2">
           <label
             htmlFor="reset-confirm-password"
-            className="text-sm font-medium text-[var(--foreground)]"
+            className="text-sm font-medium text-ink"
           >
             Confirm New Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
             <input
               id="reset-confirm-password"
               type="password"
@@ -84,7 +84,7 @@ export function ResetPasswordForm() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm your new password"
               required
-              className="h-11 w-full rounded-lg border border-[var(--input)] bg-[var(--background)] pl-10 pr-4 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]/20"
+              className="h-11 w-full rounded-xs border border-hairline bg-surface pl-10 pr-4 text-sm text-ink placeholder:text-ink-muted outline-none transition-colors focus:border-primary focus:shadow-soft"
             />
           </div>
         </div>
@@ -95,7 +95,7 @@ export function ResetPasswordForm() {
           disabled={isPending}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary font-semibold text-on-primary transition-all hover:bg-primary-dark hover:shadow-soft disabled:opacity-50 disabled:cursor-not-allowed mt-6"
         >
           {isPending ? (
             <>

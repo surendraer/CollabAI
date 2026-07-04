@@ -3,6 +3,7 @@ import catchAsync from "../utils/catchAsync";
 import * as authService from "../services/auth.service";
 import { HttpStatus, CookieNames, TokenExpiry } from "../constants";
 import config from "../config";
+import AppError from "../utils/AppError";
 
 // Cookie options
 const accessTokenCookieOptions = {
@@ -124,13 +125,28 @@ export const getMe = catchAsync(async (req: Request, res: Response) => {
 
 // ===== VERIFY EMAIL =====
 export const verifyEmail = catchAsync(async (req: Request, res: Response) => {
-  const { token } = req.params;
+  const token = Array.isArray(req.params.token)
+    ? req.params.token[0]
+    : req.params.token;
   const user = await authService.verifyEmail(token);
 
   res.status(HttpStatus.OK).json({
     status: "success",
     message: "Email verified successfully",
     data: { user },
+  });
+});
+
+// ===== RESEND VERIFICATION EMAIL =====
+export const resendVerificationEmail = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user?._id) {
+    throw new AppError("Authentication required", HttpStatus.UNAUTHORIZED);
+  }
+  await authService.resendVerification(req.user._id.toString());
+
+  res.status(HttpStatus.OK).json({
+    status: "success",
+    message: "Verification email resent successfully",
   });
 });
 
@@ -151,7 +167,9 @@ export const forgotPassword = catchAsync(
 // ===== RESET PASSWORD =====
 export const resetPassword = catchAsync(
   async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = Array.isArray(req.params.token)
+      ? req.params.token[0]
+      : req.params.token;
     await authService.resetPassword(token, req.body.password);
 
     res.status(HttpStatus.OK).json({

@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { useVerifyEmail } from "@/hooks/useAuth";
+import { AxiosError } from "axios";
 
 export default function VerifyEmailPage() {
   const { token } = useParams<{ token: string }>();
@@ -55,7 +56,7 @@ export default function VerifyEmailPage() {
               Verification failed
             </h2>
             <p className="mt-2 text-[var(--muted-foreground)]">
-              {(error as any)?.response?.data?.message ||
+              {(error as AxiosError<{ message?: string }>)?.response?.data?.message ||
                 "Invalid or expired verification link."}
             </p>
             <Link

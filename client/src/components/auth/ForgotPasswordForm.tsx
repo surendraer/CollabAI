@@ -26,19 +26,19 @@ export function ForgotPasswordForm() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)]/10">
-          <Mail className="h-7 w-7 text-[var(--primary)]" />
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+          <Mail className="h-7 w-7 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)]">
+        <h1 className="text-2xl font-bold text-ink" style={{ letterSpacing: "-0.02em" }}>
           Check your email
         </h1>
-        <p className="mt-2 text-[var(--muted-foreground)]">
+        <p className="mt-2 text-ink-muted">
           If an account exists for <strong>{email}</strong>, we've sent a
           password reset link.
         </p>
         <Link
           to="/login"
-          className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-[var(--primary)] hover:underline"
+          className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to sign in
@@ -54,10 +54,10 @@ export function ForgotPasswordForm() {
       transition={{ duration: 0.5 }}
     >
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--foreground)]">
+        <h1 className="text-3xl font-bold text-ink" style={{ letterSpacing: "-0.02em" }}>
           Forgot password?
         </h1>
-        <p className="mt-2 text-[var(--muted-foreground)]">
+        <p className="mt-2 text-ink-muted">
           Enter your email and we'll send you a reset link
         </p>
       </div>
@@ -66,12 +66,12 @@ export function ForgotPasswordForm() {
         <div className="space-y-2">
           <label
             htmlFor="forgot-email"
-            className="text-sm font-medium text-[var(--foreground)]"
+            className="text-sm font-medium text-ink"
           >
             Email
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
             <input
               id="forgot-email"
               type="email"
@@ -79,7 +79,7 @@ export function ForgotPasswordForm() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
               required
-              className="h-11 w-full rounded-lg border border-[var(--input)] bg-[var(--background)] pl-10 pr-4 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]/20"
+              className="h-11 w-full rounded-xs border border-hairline bg-surface pl-10 pr-4 text-sm text-ink placeholder:text-ink-muted outline-none transition-colors focus:border-primary focus:shadow-soft"
             />
           </div>
         </div>
@@ -89,7 +89,7 @@ export function ForgotPasswordForm() {
           disabled={isPending}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary font-semibold text-on-primary transition-all hover:bg-primary-dark hover:shadow-soft disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? (
             <>
@@ -102,10 +102,10 @@ export function ForgotPasswordForm() {
         </motion.button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-[var(--muted-foreground)]">
+      <p className="mt-6 text-center text-sm text-ink-muted">
         <Link
           to="/login"
-          className="inline-flex items-center gap-1 font-medium text-[var(--primary)] hover:underline"
+          className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to sign in

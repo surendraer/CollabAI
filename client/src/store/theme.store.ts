@@ -12,7 +12,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      theme: "dark",
+      theme: "light",
       toggleTheme: () => {
         const newTheme = get().theme === "dark" ? "light" : "dark";
         set({ theme: newTheme });
@@ -44,11 +44,17 @@ export function initializeTheme() {
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      applyTheme(parsed.state.theme || "dark");
+      const theme = parsed.state?.theme || "light";
+      applyTheme(theme);
+      // Synchronize zustand store state with document class
+      useThemeStore.setState({ theme });
     } catch {
-      applyTheme("dark");
+      applyTheme("light");
     }
   } else {
-    applyTheme("dark");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const defaultTheme = prefersDark ? "dark" : "light";
+    applyTheme(defaultTheme);
+    useThemeStore.setState({ theme: defaultTheme });
   }
 }

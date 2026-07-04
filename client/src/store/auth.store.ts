@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { User } from "@/types/auth.types";
 
+import { useWorkspaceStore } from "./workspace.store";
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -22,12 +24,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       isLoading: false,
     }),
 
-  clearUser: () =>
+  clearUser: () => {
+    useWorkspaceStore.getState().clearWorkspaceState();
     set({
       user: null,
       isAuthenticated: false,
       isLoading: false,
-    }),
+    });
+  },
 
   setLoading: (loading) => set({ isLoading: loading }),
 }));

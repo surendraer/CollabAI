@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { authApi } from "@/api/auth.api";
 import { useAuthStore } from "@/store/auth.store";
 import toast from "react-hot-toast";
+import { AxiosError } from "axios";
 import type {
   LoginRequest,
   RegisterRequest,
@@ -35,6 +36,22 @@ export const useGetMe = () => {
   });
 };
 
+// ===== RESEND VERIFICATION =====
+export const useResendVerification = () => {
+  return useMutation({
+    mutationFn: () => authApi.resendVerification(),
+    onSuccess: (response) => {
+      toast.success(response.data.message || "Verification email sent! 📧");
+    },
+    onError: (error) => {
+      const err = error as AxiosError<{ message?: string }>;
+      const message =
+        err.response?.data?.message || "Failed to resend verification link.";
+      toast.error(message);
+    },
+  });
+};
+
 // ===== LOGIN =====
 export const useLogin = () => {
   const { setUser } = useAuthStore();
@@ -52,9 +69,10 @@ export const useLogin = () => {
         navigate("/dashboard");
       }
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      const err = error as AxiosError<{ message?: string }>;
       const message =
-        error.response?.data?.message || "Login failed. Please try again.";
+        err.response?.data?.message || "Login failed. Please try again.";
       toast.error(message);
     },
   });
@@ -72,9 +90,10 @@ export const useRegister = () => {
       );
       navigate("/login");
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      const err = error as AxiosError<{ message?: string }>;
       const message =
-        error.response?.data?.message || "Registration failed.";
+        err.response?.data?.message || "Registration failed.";
       toast.error(message);
     },
   });
@@ -112,9 +131,10 @@ export const useForgotPassword = () => {
         response.data.message || "Password reset link sent to your email."
       );
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      const err = error as AxiosError<{ message?: string }>;
       const message =
-        error.response?.data?.message || "Something went wrong.";
+        err.response?.data?.message || "Something went wrong.";
       toast.error(message);
     },
   });
@@ -138,9 +158,10 @@ export const useResetPassword = () => {
       );
       navigate("/login");
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      const err = error as AxiosError<{ message?: string }>;
       const message =
-        error.response?.data?.message || "Reset failed. Token may have expired.";
+        err.response?.data?.message || "Reset failed. Token may have expired.";
       toast.error(message);
     },
   });

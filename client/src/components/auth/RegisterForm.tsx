@@ -24,11 +24,11 @@ export function RegisterForm() {
       transition={{ duration: 0.5 }}
     >
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--foreground)]">
+        <h1 className="text-3xl font-bold text-ink" style={{ letterSpacing: "-0.02em" }}>
           Create your account
         </h1>
-        <p className="mt-2 text-[var(--muted-foreground)]">
-          Start collaborating with your team today
+        <p className="mt-2 text-ink-muted">
+          Join thousands of teams collaborating on CollabAI
         </p>
       </div>
 
@@ -37,12 +37,12 @@ export function RegisterForm() {
         <div className="space-y-2">
           <label
             htmlFor="register-name"
-            className="text-sm font-medium text-[var(--foreground)]"
+            className="text-sm font-medium text-ink"
           >
             Full Name
           </label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
             <input
               id="register-name"
               type="text"
@@ -51,7 +51,7 @@ export function RegisterForm() {
               placeholder="John Doe"
               required
               minLength={2}
-              className="h-11 w-full rounded-lg border border-[var(--input)] bg-[var(--background)] pl-10 pr-4 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]/20"
+              className="h-11 w-full rounded-xs border border-hairline bg-surface pl-10 pr-4 text-sm text-ink placeholder:text-ink-muted outline-none transition-colors focus:border-primary focus:shadow-soft"
             />
           </div>
         </div>
@@ -60,12 +60,12 @@ export function RegisterForm() {
         <div className="space-y-2">
           <label
             htmlFor="register-email"
-            className="text-sm font-medium text-[var(--foreground)]"
+            className="text-sm font-medium text-ink"
           >
             Email
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
             <input
               id="register-email"
               type="email"
@@ -73,7 +73,7 @@ export function RegisterForm() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
               required
-              className="h-11 w-full rounded-lg border border-[var(--input)] bg-[var(--background)] pl-10 pr-4 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]/20"
+              className="h-11 w-full rounded-xs border border-hairline bg-surface pl-10 pr-4 text-sm text-ink placeholder:text-ink-muted outline-none transition-colors focus:border-primary focus:shadow-soft"
             />
           </div>
         </div>
@@ -82,26 +82,26 @@ export function RegisterForm() {
         <div className="space-y-2">
           <label
             htmlFor="register-password"
-            className="text-sm font-medium text-[var(--foreground)]"
+            className="text-sm font-medium text-ink"
           >
             Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
             <input
               id="register-password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min 8 chars, uppercase, lowercase, number"
+              placeholder="Min 8 chars"
               required
               minLength={8}
-              className="h-11 w-full rounded-lg border border-[var(--input)] bg-[var(--background)] pl-10 pr-10 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]/20"
+              className="h-11 w-full rounded-xs border border-hairline bg-surface pl-10 pr-10 text-sm text-ink placeholder:text-ink-muted outline-none transition-colors focus:border-primary focus:shadow-soft"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -116,12 +116,12 @@ export function RegisterForm() {
         <div className="space-y-2">
           <label
             htmlFor="register-confirm-password"
-            className="text-sm font-medium text-[var(--foreground)]"
+            className="text-sm font-medium text-ink"
           >
             Confirm Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
             <input
               id="register-confirm-password"
               type="password"
@@ -129,7 +129,7 @@ export function RegisterForm() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm your password"
               required
-              className="h-11 w-full rounded-lg border border-[var(--input)] bg-[var(--background)] pl-10 pr-4 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]/20"
+              className="h-11 w-full rounded-xs border border-hairline bg-surface pl-10 pr-4 text-sm text-ink placeholder:text-ink-muted outline-none transition-colors focus:border-primary focus:shadow-soft"
             />
           </div>
         </div>
@@ -140,7 +140,7 @@ export function RegisterForm() {
           disabled={isPending}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary font-semibold text-on-primary transition-all hover:bg-primary-dark hover:shadow-soft disabled:opacity-50 disabled:cursor-not-allowed mt-6"
         >
           {isPending ? (
             <>
@@ -156,10 +156,10 @@ export function RegisterForm() {
       {/* Divider */}
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[var(--border)]" />
+          <div className="w-full border-t border-hairline" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-[var(--card)] px-2 text-[var(--muted-foreground)]">
+          <span className="bg-canvas-soft px-2 text-ink-faint">
             Or continue with
           </span>
         </div>
@@ -168,7 +168,7 @@ export function RegisterForm() {
       {/* Google OAuth */}
       <button
         type="button"
-        className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)]"
+        className="flex h-11 w-full items-center justify-center gap-3 rounded-xs border border-hairline bg-surface text-sm font-medium text-ink transition-colors hover:bg-canvas-soft"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -180,11 +180,11 @@ export function RegisterForm() {
       </button>
 
       {/* Footer */}
-      <p className="mt-6 text-center text-sm text-[var(--muted-foreground)]">
+      <p className="mt-8 text-center text-sm text-ink-muted">
         Already have an account?{" "}
         <Link
           to="/login"
-          className="font-semibold text-[var(--primary)] hover:underline"
+          className="font-semibold text-primary hover:underline"
         >
           Sign in
         </Link>

@@ -57,8 +57,15 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        // Redirect to login
-        window.location.href = "/login";
+        
+        // Prevent infinite page reload loop if already on a public/auth route
+        const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+        const currentPath = window.location.pathname;
+        const isPublicPath = publicPaths.some(path => currentPath.startsWith(path)) || currentPath === "/";
+        
+        if (!isPublicPath) {
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

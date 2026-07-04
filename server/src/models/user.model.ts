@@ -65,7 +65,6 @@ const userSchema = new Schema<IUser>(
     resetPasswordExpires: Date,
     googleId: {
       type: String,
-      sparse: true,
     },
     provider: {
       type: String,
@@ -80,7 +79,6 @@ const userSchema = new Schema<IUser>(
 );
 
 // Index for faster lookups
-userSchema.index({ email: 1 });
 userSchema.index({ googleId: 1 }, { sparse: true });
 userSchema.index({ verificationToken: 1 }, { sparse: true });
 userSchema.index({ resetPasswordToken: 1 }, { sparse: true });

@@ -1,15 +1,32 @@
+// ─── DNS Configuration ───
+// Force IPv4 + override DNS servers to Google/Cloudflare.
+// This fixes the querySrv ECONNREFUSED error for MongoDB Atlas on ISPs
+// that block SRV record lookups — no Windows/system DNS changes needed.
+import dns from "dns";
+dns.setDefaultResultOrder("ipv4first");
+dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
+
+import http from "http";
 import app from "./app";
 import config from "./config";
 import connectDB from "./config/db";
 import logger from "./utils/logger";
+import SocketService from "./services/socket.service";
+
 
 const startServer = async () => {
   try {
     // Connect to MongoDB
     await connectDB();
 
+    // Create HTTP Server
+    const httpServer = http.createServer(app);
+
+    // Initialize Socket.IO
+    SocketService.init(httpServer);
+
     // Start HTTP server
-    const server = app.listen(config.port, () => {
+    const server = httpServer.listen(config.port, () => {
       logger.info(
         `🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`
       );

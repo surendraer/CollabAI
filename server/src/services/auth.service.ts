@@ -65,6 +65,29 @@ export const register = async (
   return { user, verificationToken: rawToken };
 };
 
+// ===== RESEND VERIFICATION =====
+export const resendVerification = async (
+  userId: string
+): Promise<void> => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError(ErrorMessages.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+  }
+
+  if (user.isVerified) {
+    throw new AppError("Account is already verified", HttpStatus.BAD_REQUEST);
+  }
+
+  const rawToken = generateRandomToken();
+  const hashedToken = hashToken(rawToken);
+
+  user.verificationToken = hashedToken;
+  user.verificationExpires = new Date(Date.now() + TokenExpiry.VERIFICATION);
+  await user.save({ validateBeforeSave: false });
+
+  await sendVerificationEmail(user.email, user.name, rawToken);
+};
+
 // ===== LOGIN =====
 export const login = async (
   input: LoginInput,

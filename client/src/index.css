@@ -1,63 +1,133 @@
+/* ===== Google Fonts Import — must be first ===== */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ===== Base Styles ===== */
+/* ===== Design System CSS Variables ===== */
 @layer base {
   :root {
-    --background: #ffffff;
-    --foreground: #0f172a;
+    --background: #f7f7f7;
+    --foreground: #1a1a1a;
+    
+    --primary: #024ad8;
+    --primary-bright: #296ef9;
+    --primary-deep: #0e3191;
+    --primary-soft: #c9e0fc;
+    --on-primary: #ffffff;
+    
+    --ink: #1a1a1a;
+    --ink-deep: #000000;
+    --ink-soft: #292929;
+    --ink-muted: #636363;
+    --ink-secondary: #3d3d3d;
+    --ink-faint: #c2c2c2;
+    --on-ink: #ffffff;
+    
+    --canvas: #ffffff;
+    --canvas-soft: #f7f7f7;
+    --paper: #ffffff;
+    --surface: #ffffff;
+    --cloud: #f7f7f7;
+    --fog: #e8e8e8;
+    --steel: #c2c2c2;
+    --graphite: #636363;
+    --charcoal: #3d3d3d;
+    --hairline: #e8e8e8;
+    --hairline-strong: #c2c2c2;
+    
+    --secondary: #0f172a; /* Dark navy hero section background in light mode */
+    --secondary-foreground: #ffffff;
+    
     --card: #ffffff;
-    --card-foreground: #0f172a;
+    --card-foreground: #1a1a1a;
     --popover: #ffffff;
-    --popover-foreground: #0f172a;
-    --primary: #6366f1;
-    --primary-foreground: #ffffff;
-    --secondary: #f1f5f9;
-    --secondary-foreground: #0f172a;
-    --muted: #f1f5f9;
-    --muted-foreground: #64748b;
-    --accent: #f1f5f9;
-    --accent-foreground: #0f172a;
-    --destructive: #ef4444;
+    --popover-foreground: #1a1a1a;
+    
+    --muted: #f7f7f7;
+    --muted-foreground: #636363;
+    --accent: #e8e8e8;
+    --accent-foreground: #1a1a1a;
+    --border: #e8e8e8;
+    --input: #ffffff;
+    --ring: #024ad8;
+    --destructive: #b3262b;
     --destructive-foreground: #ffffff;
-    --border: #e2e8f0;
-    --input: #e2e8f0;
-    --ring: #6366f1;
+    
+    --bloom-rose: #f9d4d2;
+    --accent-green: #10b981;
+    --accent-purple: #8b5cf6;
+    --accent-sky: #0ea5e9;
   }
 
   .dark {
-    --background: #0a0a1a;
-    --foreground: #f1f5f9;
-    --card: #111127;
-    --card-foreground: #f1f5f9;
-    --popover: #111127;
-    --popover-foreground: #f1f5f9;
-    --primary: #818cf8;
-    --primary-foreground: #0f0f23;
-    --secondary: #1e293b;
-    --secondary-foreground: #f1f5f9;
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
-    --accent: #1e293b;
-    --accent-foreground: #f1f5f9;
+    --background: #0b0c10;
+    --foreground: #f3f4f6;
+    
+    --primary: #296ef9;
+    --primary-bright: #3b82f6;
+    --primary-deep: #1d4ed8;
+    --primary-soft: #1e293b;
+    --on-primary: #ffffff;
+    
+    --ink: #f3f4f6;
+    --ink-deep: #ffffff;
+    --ink-soft: #e5e7eb;
+    --ink-muted: #9ca3af;
+    --ink-secondary: #d1d5db;
+    --ink-faint: #4b5563;
+    --on-ink: #0f172a;
+    
+    --canvas: #0f1115;
+    --canvas-soft: #0b0c10;
+    --paper: #161a22;
+    --surface: #161a22;
+    --cloud: #161a22;
+    --fog: #1f242e;
+    --steel: #4b5563;
+    --graphite: #9ca3af;
+    --charcoal: #d1d5db;
+    --hairline: #242b35;
+    --hairline-strong: #4b5563;
+    
+    --secondary: #131720; /* Darker slate hero section in dark mode */
+    --secondary-foreground: #f3f4f6;
+    
+    --card: #161a22;
+    --card-foreground: #f3f4f6;
+    --popover: #161a22;
+    --popover-foreground: #f3f4f6;
+    
+    --muted: #161a22;
+    --muted-foreground: #9ca3af;
+    --accent: #1f242e;
+    --accent-foreground: #f3f4f6;
+    --border: #242b35;
+    --input: #161a22;
+    --ring: #296ef9;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
-    --border: #1e293b;
-    --input: #1e293b;
-    --ring: #818cf8;
+    
+    --bloom-rose: #451e1e;
+    --accent-green: #34d399;
+    --accent-purple: #a78bfa;
+    --accent-sky: #38bdf8;
   }
 
   * {
-    @apply border-[var(--border)];
+    border-color: var(--border);
+    box-sizing: border-box;
   }
 
-  body {
+  html, body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Manrope', 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
   }
 }
 
@@ -72,22 +142,60 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--muted-foreground);
+  background: var(--steel);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--foreground);
+  background: var(--graphite);
 }
 
 /* ===== Selection ===== */
 ::selection {
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: var(--primary-soft);
+  color: var(--foreground);
 }
 
 /* ===== Focus Visible ===== */
 :focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+/* ===== Utility Classes ===== */
+.shadow-soft-lift {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.dark .shadow-soft-lift {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.shadow-floating-modal {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.dark .shadow-floating-modal {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.shadow-card-hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+.dark .shadow-card-hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* ===== Input / Select Appearance ===== */
+input, textarea, select {
+  background-color: var(--input);
+  color: var(--foreground);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
+select option {
+  background-color: var(--card);
+  color: var(--foreground);
 }

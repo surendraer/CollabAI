@@ -54,78 +54,82 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div className="min-h-screen bg-canvas-soft">
       {/* Navbar */}
-      <nav className="fixed top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2 text-lg font-bold text-[var(--primary)]">
-            <span>⚡</span>
+      <nav className="sticky top-0 z-50 w-full border-b border-hairline bg-canvas/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8">
+          <Link to="/" className="flex items-center gap-2 text-lg font-bold text-ink">
+            <span className="text-xl">🚀</span>
             CollabAI
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <ThemeToggle />
             <Link
               to="/login"
-              className="text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+              className="text-sm font-medium text-ink-muted transition-colors hover:text-ink hidden sm:block"
             >
               Sign in
             </Link>
             <Link
               to="/register"
-              className="flex h-9 items-center rounded-lg bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
+              className="hidden sm:flex h-10 items-center rounded-full bg-primary px-6 text-sm font-medium text-on-primary transition-all hover:bg-primary-dark hover:shadow-soft"
             >
-              Get Started
+              Get started free
+            </Link>
+            <Link
+              to="/register"
+              className="sm:hidden flex h-10 items-center rounded-full bg-primary px-4 text-sm font-medium text-on-primary"
+            >
+              Sign up
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-32">
-        {/* Background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-[var(--primary)]/5 blur-[120px]" />
+      {/* Hero Section — Dark night band like Notion */}
+      <section className="relative overflow-hidden bg-secondary text-on-primary py-24 sm:py-32">
+        <div className="absolute inset-0 opacity-30">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+              backgroundSize: "40px 40px",
+            }}
+          />
+        </div>
 
-        <div className="relative mx-auto max-w-6xl px-6 text-center">
+        <div className="relative mx-auto max-w-6xl px-6 sm:px-8 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.8 }}
           >
-            {/* Badge */}
-            <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-1.5 text-sm text-[var(--muted-foreground)]">
-              <Sparkles className="h-3.5 w-3.5 text-[var(--primary)]" />
-              AI-Powered Collaboration Platform
-            </div>
-
-            <h1 className="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-5xl lg:text-6xl">
-              Build together,
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-6">
+              Team collaboration
               <br />
-              <span className="bg-gradient-to-r from-[var(--primary)] to-purple-500 bg-clip-text text-transparent">
-                ship faster
-              </span>
+              <span className="text-accent-sky">built for shipping</span>
             </h1>
 
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-[var(--muted-foreground)]">
-              The all-in-one workspace for modern teams. Manage projects,
-              collaborate in real-time, and leverage AI to boost productivity.
+            <p className="mx-auto max-w-2xl text-lg text-on-primary/80 mb-10">
+              Manage projects, track tasks in real-time, chat with your team, and use AI to work smarter—all in one workspace.
             </p>
 
-            {/* CTA */}
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/register"
-                className="group flex h-12 items-center gap-2 rounded-xl bg-[var(--primary)] px-8 text-base font-semibold text-[var(--primary-foreground)] transition-all hover:shadow-lg hover:shadow-[var(--primary)]/25"
+                className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-base font-semibold text-on-primary transition-all hover:bg-primary-dark hover:shadow-elevated active:scale-95"
               >
-                Start for free
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                Start free
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <a
                 href="https://github.com"
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-12 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-8 text-base font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)]"
+                className="inline-flex h-12 items-center justify-center rounded-full border-2 border-on-primary/20 bg-transparent px-8 text-base font-semibold text-on-primary transition-all hover:border-on-primary/40 hover:bg-card/10"
               >
-                <GithubIcon className="h-5 w-5" />
+                <GithubIcon className="h-5 w-5 mr-2" />
                 View on GitHub
               </a>
             </div>
@@ -133,24 +137,28 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="border-t border-[var(--border)] py-20 lg:py-28">
-        <div className="mx-auto max-w-6xl px-6">
+      {/* Features Section */}
+      <section className="py-24 sm:py-32 bg-canvas-soft">
+        <div className="mx-auto max-w-6xl px-6 sm:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center"
+            className="text-center mb-16"
           >
-            <h2 className="text-3xl font-bold text-[var(--foreground)] lg:text-4xl">
-              Everything your team needs
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-surface px-4 py-2 mb-6">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">Complete workspace</span>
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-bold text-ink mb-4" style={{ letterSpacing: "-0.02em" }}>
+              Everything you need to collaborate
             </h2>
-            <p className="mt-4 text-lg text-[var(--muted-foreground)]">
-              A complete suite of tools designed for modern team collaboration.
+            <p className="text-lg text-ink-muted max-w-2xl mx-auto">
+              From project planning to real-time teamwork, CollabAI brings all your collaboration tools together.
             </p>
           </motion.div>
 
-          <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (
               <motion.div
                 key={feature.title}
@@ -158,15 +166,15 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="group rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 transition-all hover:border-[var(--primary)]/30 hover:shadow-lg"
+                className="rounded-lg bg-surface border border-hairline p-6 transition-all hover:border-primary/30 hover:shadow-soft"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary)]/10 transition-colors group-hover:bg-[var(--primary)]/20">
-                  <feature.icon className="h-6 w-6 text-[var(--primary)]" />
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <feature.icon className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="mt-4 text-lg font-semibold text-[var(--foreground)]">
+                <h3 className="text-lg font-bold text-ink mb-2">
                   {feature.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--muted-foreground)]">
+                <p className="text-sm text-ink-muted leading-relaxed">
                   {feature.desc}
                 </p>
               </motion.div>
@@ -175,45 +183,121 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="border-t border-[var(--border)] py-20">
-        <div className="mx-auto max-w-6xl px-6 text-center">
+      {/* Benefits Section */}
+      <section className="py-24 sm:py-32 bg-canvas">
+        <div className="mx-auto max-w-6xl px-6 sm:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-4xl sm:text-5xl font-bold text-ink mb-6" style={{ letterSpacing: "-0.02em" }}>
+                Built for how teams actually work
+              </h2>
+              <ul className="space-y-4">
+                {[
+                  "Organize projects and tasks with drag-and-drop boards",
+                  "Chat with your team instantly, see who's online",
+                  "AI-powered insights and task suggestions",
+                  "Role-based access control and team permissions",
+                ].map((item, i) => (
+                  <li key={i} className="flex gap-3 items-start">
+                    <div className="h-6 w-6 rounded-full bg-accent-green/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="h-3.5 w-3.5 text-accent-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-ink-secondary">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-primary/10 to-accent-purple/10 rounded-lg p-8 border border-primary/20"
+            >
+              <div className="space-y-4">
+                <div className="h-12 w-12 rounded-lg bg-accent-sky/30" />
+                <div className="h-4 w-2/3 rounded bg-ink/10" />
+                <div className="h-4 w-1/2 rounded bg-ink/10" />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-24 sm:py-32 bg-canvas-soft border-t border-hairline">
+        <div className="mx-auto max-w-4xl px-6 sm:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-bold text-[var(--foreground)]">
-              Ready to get started?
+            <h2 className="text-4xl sm:text-5xl font-bold text-ink mb-4" style={{ letterSpacing: "-0.02em" }}>
+              Start building together
             </h2>
-            <p className="mt-3 text-lg text-[var(--muted-foreground)]">
-              Join teams that ship faster with CollabAI.
+            <p className="text-lg text-ink-muted mb-8 max-w-xl mx-auto">
+              Join teams worldwide who are shipping faster with CollabAI. Set up in minutes, no credit card required.
             </p>
-            <Link
-              to="/register"
-              className="mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--primary)] px-8 text-base font-semibold text-[var(--primary-foreground)] transition-all hover:shadow-lg hover:shadow-[var(--primary)]/25"
-            >
-              Create free account
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/register"
+                className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-base font-semibold text-on-primary transition-all hover:bg-primary-dark hover:shadow-elevated active:scale-95"
+              >
+                Create free account
+              </Link>
+              <Link
+                to="/login"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-primary text-base font-semibold text-primary transition-all hover:bg-primary/10"
+              >
+                Already have an account? Sign in
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border)] py-8">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <span className="text-sm text-[var(--muted-foreground)]">
-              © {new Date().getFullYear()} CollabAI. Built with ❤️ using MERN
-              Stack.
-            </span>
+      <footer className="bg-canvas border-t border-hairline py-12">
+        <div className="mx-auto max-w-6xl px-6 sm:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h3 className="font-bold text-ink mb-3">CollabAI</h3>
+              <p className="text-sm text-ink-muted">Modern collaboration platform built for teams.</p>
+            </div>
+            {[
+              { title: "Product", links: ["Features", "Pricing", "Security"] },
+              { title: "Company", links: ["Blog", "GitHub", "Contact"] },
+              { title: "Legal", links: ["Privacy", "Terms", "Cookies"] },
+            ].map((col) => (
+              <div key={col.title}>
+                <h4 className="font-semibold text-ink text-sm mb-3">{col.title}</h4>
+                <ul className="space-y-2">
+                  {col.links.map((link) => (
+                    <li key={link}>
+                      <a href="#" className="text-sm text-ink-muted hover:text-ink transition-colors">
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-hairline pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-ink-muted">
+              © {new Date().getFullYear()} CollabAI. Built for teams, by teams.
+            </p>
             <div className="flex items-center gap-4">
               <a
                 href="https://github.com"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+                className="text-ink-muted hover:text-ink transition-colors"
               >
                 <GithubIcon className="h-5 w-5" />
               </a>

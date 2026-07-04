@@ -1,36 +1,73 @@
+import nodemailer from "nodemailer";
 import { Resend } from "resend";
 import config from "../config";
 import logger from "../utils/logger";
 
 const resend = config.resend.apiKey ? new Resend(config.resend.apiKey) : null;
 
-const FROM_EMAIL = "CollabAI <onboarding@resend.dev>";
+const transporter = config.smtp.host
+  ? nodemailer.createTransport({
+      host: config.smtp.host,
+      port: config.smtp.port,
+      secure: config.smtp.port === 465,
+      auth: config.smtp.user && config.smtp.pass
+        ? {
+            user: config.smtp.user,
+            pass: config.smtp.pass,
+          }
+        : undefined,
+    })
+  : null;
 
-const sendEmail = async (
+if (transporter) {
+  transporter.verify((error) => {
+    if (error) {
+      logger.error("❌ SMTP transporter configuration error:", error);
+    } else {
+      logger.info("📧 SMTP transporter verified successfully — ready to send emails");
+    }
+  });
+}
+
+export const sendEmail = async (
   to: string,
   subject: string,
   html: string
 ): Promise<void> => {
-  if (!resend) {
-    logger.warn(
-      `📧 Email not sent (no RESEND_API_KEY). To: ${to}, Subject: ${subject}`
-    );
-    logger.debug(`Email HTML content:\n${html}`);
-    return;
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from: config.smtp.from,
+        to,
+        subject,
+        html,
+      });
+      logger.info(`📧 Email sent via SMTP to ${to}: ${subject}`);
+      return;
+    } catch (error) {
+      logger.error(`Failed to send email via SMTP to ${to}:`, error);
+    }
   }
 
-  try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to,
-      subject,
-      html,
-    });
-    logger.info(`📧 Email sent to ${to}: ${subject}`);
-  } catch (error) {
-    logger.error(`Failed to send email to ${to}:`, error);
-    // Don't throw — email failure shouldn't break the flow
+  if (resend) {
+    try {
+      await resend.emails.send({
+        from: "CollabAI <onboarding@resend.dev>",
+        to,
+        subject,
+        html,
+      });
+      logger.info(`📧 Email sent via Resend to ${to}: ${subject}`);
+      return;
+    } catch (error) {
+      logger.error(`Failed to send email via Resend to ${to}:`, error);
+    }
   }
+
+  logger.warn(
+    `📧 Email not sent (no SMTP or Resend credentials). To: ${to}, Subject: ${subject}`
+  );
+  logger.debug(`Email HTML content:\n${html}`);
 };
 
 export const sendVerificationEmail = async (
@@ -39,6 +76,10 @@ export const sendVerificationEmail = async (
   token: string
 ): Promise<void> => {
   const verifyUrl = `${config.clientUrl}/verify-email/${token}`;
+
+  if (config.nodeEnv === "development") {
+    logger.info(`🔑 [DEV-ONLY] Verification Link for ${email}: ${verifyUrl}`);
+  }
 
   const html = `
     <!DOCTYPE html>
@@ -86,6 +127,10 @@ export const sendPasswordResetEmail = async (
   token: string
 ): Promise<void> => {
   const resetUrl = `${config.clientUrl}/reset-password/${token}`;
+
+  if (config.nodeEnv === "development") {
+    logger.info(`🔑 [DEV-ONLY] Password Reset Link for ${email}: ${resetUrl}`);
+  }
 
   const html = `
     <!DOCTYPE html>

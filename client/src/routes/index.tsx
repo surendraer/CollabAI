@@ -12,6 +12,11 @@ import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import VerifyEmailPage from "@/pages/auth/VerifyEmailPage";
 import DashboardPage from "@/pages/DashboardPage";
+import WorkspaceBoardPage from "@/pages/WorkspaceBoardPage";
+import WorkspaceChatPage from "@/pages/WorkspaceChatPage";
+import WorkspaceAnalyticsPage from "@/pages/WorkspaceAnalyticsPage";
+import WorkspaceSettingsPage from "@/pages/WorkspaceSettingsPage";
+import JoinWorkspacePage from "@/pages/JoinWorkspacePage";
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -47,8 +52,13 @@ export function AppRoutes() {
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
+        <Route path="/join/:token" element={<JoinWorkspacePage />} />
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/projects/:projectId" element={<WorkspaceBoardPage />} />
+          <Route path="/chat" element={<WorkspaceChatPage />} />
+          <Route path="/analytics" element={<WorkspaceAnalyticsPage />} />
+          <Route path="/settings" element={<WorkspaceSettingsPage />} />
         </Route>
       </Route>
 
