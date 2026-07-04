@@ -14,6 +14,9 @@ import { HttpStatus } from "./constants";
 
 const app = express();
 
+// Trust reverse proxy (Render, Heroku, etc.)
+app.set("trust proxy", 1);
+
 // ===== Security Middleware =====
 
 // Helmet — secure HTTP headers
