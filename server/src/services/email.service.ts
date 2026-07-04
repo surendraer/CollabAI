@@ -32,11 +32,68 @@ if (transporter) {
   });
 }
 
+const sendViaBrevoAPI = async (
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> => {
+  if (!config.smtp.pass || !config.smtp.pass.startsWith("xsmtpsib-")) {
+    return false;
+  }
+
+  try {
+    const fromName = config.smtp.from.match(/"([^"]+)"/)?.[1] || "CollabAI";
+    const fromEmail = config.smtp.from.match(/<([^>]+)>/)?.[1] || "ersurendra.in@gmail.com";
+
+    // Node.js 18+ has a native fetch implementation
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": config.smtp.pass,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: fromName,
+          email: fromEmail,
+        },
+        to: [
+          {
+            email: to,
+          },
+        ],
+        subject: subject,
+        htmlContent: html,
+      }),
+    });
+
+    if (response.ok) {
+      logger.info(`📧 Email sent via Brevo HTTP API to ${to}: ${subject}`);
+      return true;
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      logger.error(`Brevo HTTP API returned status ${response.status}:`, errorData);
+      return false;
+    }
+  } catch (error) {
+    logger.error("Failed to send email via Brevo HTTP API:", error);
+    return false;
+  }
+};
+
 export const sendEmail = async (
   to: string,
   subject: string,
   html: string
 ): Promise<void> => {
+  // 1. Try Brevo HTTP API if password is a Brevo API key
+  if (config.smtp.pass && config.smtp.pass.startsWith("xsmtpsib-")) {
+    const sent = await sendViaBrevoAPI(to, subject, html);
+    if (sent) return;
+  }
+
+  // 2. Try SMTP
   if (transporter) {
     try {
       await transporter.sendMail({
@@ -52,6 +109,7 @@ export const sendEmail = async (
     }
   }
 
+  // 3. Try Resend
   if (resend) {
     try {
       await resend.emails.send({
