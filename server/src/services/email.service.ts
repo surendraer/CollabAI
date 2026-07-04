@@ -16,6 +16,9 @@ const transporter = config.smtp.host
             pass: config.smtp.pass,
           }
         : undefined,
+      connectionTimeout: 5000, // 5 seconds connection timeout
+      greetingTimeout: 5000, // 5 seconds greeting timeout
+      socketTimeout: 10000, // 10 seconds socket activity timeout
     })
   : null;
 

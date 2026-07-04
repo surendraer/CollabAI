@@ -1,6 +1,7 @@
 import User, { IUser } from "../models/user.model";
 import Session from "../models/session.model";
 import AppError from "../utils/AppError";
+import logger from "../utils/logger";
 import {
   HttpStatus,
   ErrorMessages,
@@ -59,8 +60,10 @@ export const register = async (
     verificationExpires: new Date(Date.now() + TokenExpiry.VERIFICATION),
   });
 
-  // Send verification email
-  await sendVerificationEmail(email, name, rawToken);
+  // Send verification email (non-blocking)
+  sendVerificationEmail(email, name, rawToken).catch((err) => {
+    logger.error(`Failed to send verification email to ${email}:`, err);
+  });
 
   return { user, verificationToken: rawToken };
 };
@@ -85,7 +88,10 @@ export const resendVerification = async (
   user.verificationExpires = new Date(Date.now() + TokenExpiry.VERIFICATION);
   await user.save({ validateBeforeSave: false });
 
-  await sendVerificationEmail(user.email, user.name, rawToken);
+  // Send verification email (non-blocking)
+  sendVerificationEmail(user.email, user.name, rawToken).catch((err) => {
+    logger.error(`Failed to resend verification email to ${user.email}:`, err);
+  });
 };
 
 // ===== LOGIN =====
@@ -223,8 +229,10 @@ export const forgotPassword = async (email: string): Promise<void> => {
   );
   await user.save({ validateBeforeSave: false });
 
-  // Send reset email
-  await sendPasswordResetEmail(email, user.name, rawToken);
+  // Send reset email (non-blocking)
+  sendPasswordResetEmail(email, user.name, rawToken).catch((err) => {
+    logger.error(`Failed to send password reset email to ${email}:`, err);
+  });
 };
 
 // ===== RESET PASSWORD =====
