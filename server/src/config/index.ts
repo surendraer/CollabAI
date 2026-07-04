@@ -35,7 +35,7 @@ if (!parsed.success) {
 }
 
 const config = {
-  port: parseInt(parsed.data.PORT, 10),
+  port: parseInt(parsed.data.PORT, 10) || 5000,
   nodeEnv: parsed.data.NODE_ENV,
   isProduction: parsed.data.NODE_ENV === "production",
   isDevelopment: parsed.data.NODE_ENV === "development",

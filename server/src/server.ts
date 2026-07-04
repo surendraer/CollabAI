@@ -16,6 +16,7 @@ import SocketService from "./services/socket.service";
 
 const startServer = async () => {
   try {
+    logger.info(`Received process.env.PORT: "${process.env.PORT}"`);
     // Connect to MongoDB
     await connectDB();
 
