@@ -72,6 +72,15 @@ if (config.isDevelopment) {
 // ===== Routes =====
 app.use("/api", routes);
 
+// Root route welcome and health check
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "CollabAI API Server is running",
+    endpoints: "/api",
+  });
+});
+
 // ===== 404 Handler =====
 app.all("*", (req, _res, next) => {
   next(new AppError(`Route ${req.originalUrl} not found`, HttpStatus.NOT_FOUND));
