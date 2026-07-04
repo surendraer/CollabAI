@@ -7,6 +7,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
 import hpp from "hpp";
 import config from "./config";
+import { checkOrigin } from "./config/cors";
 import routes from "./routes";
 import errorHandler from "./middleware/errorHandler";
 import AppError from "./utils/AppError";
@@ -25,7 +26,7 @@ app.use(helmet());
 // CORS
 app.use(
   cors({
-    origin: config.clientUrl,
+    origin: checkOrigin,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

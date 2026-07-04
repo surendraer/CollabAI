@@ -2,6 +2,7 @@ import { Server as HttpServer } from "http";
 import { Server, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import config from "../config";
+import { checkOrigin } from "../config/cors";
 import User from "../models/user.model";
 import logger from "../utils/logger";
 
@@ -21,7 +22,7 @@ export class SocketService {
   public static init(server: HttpServer): Server {
     this.io = new Server(server, {
       cors: {
-        origin: config.clientUrl,
+        origin: checkOrigin,
         credentials: true,
         methods: ["GET", "POST"],
       },
