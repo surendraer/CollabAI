@@ -14,11 +14,12 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRY: z.string().default("15m"),
   JWT_REFRESH_EXPIRY: z.string().default("7d"),
   RESEND_API_KEY: z.string().optional(),
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.string().default("587"),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().default("CollabAI <noreply@collabai.dev>"),
+  EMAIL_HOST: z.string().optional(),
+  EMAIL_PORT: z.string().default("587"),
+  EMAIL_USER: z.string().optional(),
+  EMAIL_PASS: z.string().optional(),
+  EMAIL_FROM_ADDRESS: z.string().optional(),
+  EMAIL_FROM_NAME: z.string().default("GenBot"),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   CLIENT_URL: z.string().default("http://localhost:5173"),
@@ -55,11 +56,13 @@ const config = {
   },
 
   smtp: {
-    host: parsed.data.SMTP_HOST || "",
-    port: parseInt(parsed.data.SMTP_PORT, 10),
-    user: parsed.data.SMTP_USER || "",
-    pass: parsed.data.SMTP_PASS || "",
-    from: parsed.data.SMTP_FROM,
+    host: parsed.data.EMAIL_HOST || "",
+    port: parseInt(parsed.data.EMAIL_PORT, 10),
+    user: parsed.data.EMAIL_USER || "",
+    pass: parsed.data.EMAIL_PASS || "",
+    from: parsed.data.EMAIL_FROM_ADDRESS
+      ? `"${parsed.data.EMAIL_FROM_NAME}" <${parsed.data.EMAIL_FROM_ADDRESS}>`
+      : `"${parsed.data.EMAIL_FROM_NAME}" <noreply@collabai.dev>`,
   },
 
   google: {
