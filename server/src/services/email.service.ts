@@ -5,7 +5,10 @@ import logger from "../utils/logger";
 
 const resend = config.resend.apiKey ? new Resend(config.resend.apiKey) : null;
 
-const isBrevoAPI = !!(config.smtp.pass && config.smtp.pass.startsWith("xsmtpsib-"));
+const isBrevoAPI = !!(
+  config.smtp.pass &&
+  (config.smtp.pass.startsWith("xsmtpsib-") || config.smtp.pass.startsWith("xkeysib-"))
+);
 
 const transporter = config.smtp.host
   ? nodemailer.createTransport({
@@ -49,7 +52,10 @@ const sendViaBrevoAPI = async (
   subject: string,
   html: string
 ): Promise<boolean> => {
-  if (!config.smtp.pass || !config.smtp.pass.startsWith("xsmtpsib-")) {
+  if (
+    !config.smtp.pass ||
+    (!config.smtp.pass.startsWith("xsmtpsib-") && !config.smtp.pass.startsWith("xkeysib-"))
+  ) {
     return false;
   }
 
@@ -100,7 +106,11 @@ export const sendEmail = async (
   html: string
 ): Promise<void> => {
   // 1. Try Brevo HTTP API if password is a Brevo API key
-  if (config.smtp.pass && config.smtp.pass.startsWith("xsmtpsib-")) {
+  // 1. Try Brevo HTTP API if password is a Brevo API or SMTP key
+  if (
+    config.smtp.pass &&
+    (config.smtp.pass.startsWith("xsmtpsib-") || config.smtp.pass.startsWith("xkeysib-"))
+  ) {
     const sent = await sendViaBrevoAPI(to, subject, html);
     if (sent) return;
   }
