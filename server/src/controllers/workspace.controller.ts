@@ -75,7 +75,7 @@ export const createWorkspace = async (req: Request, res: Response, next: NextFun
           isDefault: false,
         },
       ],
-      { session }
+      { session, ordered: true }
     );
 
     // Automatically add creator as Owner of the Workspace

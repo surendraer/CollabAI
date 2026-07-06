@@ -86,7 +86,7 @@ export const createLab = async (
           ownerId: req.user!._id,
         },
       ],
-      { session }
+      { session, ordered: true }
     );
 
     // Automatically add creator as Owner
@@ -98,7 +98,7 @@ export const createLab = async (
           role: LabRoles.OWNER,
         },
       ],
-      { session }
+      { session, ordered: true }
     );
 
     await session.commitTransaction();
