@@ -21,7 +21,7 @@ export const useGetMe = () => {
       try {
         const { data } = await authApi.getMe();
         if (data.data?.user) {
-          setUser(data.data.user);
+          setUser(data.data.user, data.data.accessToken);
         }
         return data.data?.user || null;
       } catch {
@@ -62,8 +62,9 @@ export const useLogin = () => {
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (response) => {
       const user = response.data.data?.user;
+      const accessToken = response.data.data?.accessToken;
       if (user) {
-        setUser(user);
+        setUser(user, accessToken);
         queryClient.invalidateQueries({ queryKey: ["auth"] });
         toast.success("Welcome back! 👋");
         navigate("/dashboard");

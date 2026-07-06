@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import Workspace from "../models/workspace.model";
 import Member from "../models/member.model";
 import User from "../models/user.model";
+import Invitation from "../models/invitation.model";
 import AppError from "../utils/AppError";
 import { HttpStatus, WorkspaceRoles, ErrorMessages } from "../constants";
 import config from "../config";
@@ -186,6 +187,22 @@ export const inviteUser = async (req: Request, res: Response, next: NextFunction
     const inviteLink = `${config.clientUrl}/join/${token}`;
     logger.info(`📧 Invitation link generated for ${email}: ${inviteLink}`);
 
+    // Revoke any previous pending invitations for this email in this workspace
+    await Invitation.updateMany(
+      { workspaceId: workspace._id, email: email.toLowerCase(), status: "pending" },
+      { status: "revoked" }
+    );
+
+    // Save invitation to database
+    await Invitation.create({
+      workspaceId: workspace._id,
+      email: email.toLowerCase(),
+      role,
+      token,
+      invitedBy: req.user!._id,
+      expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours
+    });
+
     const html = `<p>You have been invited to join the workspace <strong>${workspace.name}</strong> as a ${role}.</p>
                  <p>Click <a href="${inviteLink}">here</a> to join, or copy the link below into your browser:</p>
                  <p>${inviteLink}</p>
@@ -236,6 +253,11 @@ export const acceptInvite = async (req: Request, res: Response, next: NextFuncti
     // Check if already a member
     const existingMember = await Member.findOne({ workspaceId, userId: req.user!._id });
     if (existingMember) {
+      // Mark invitation as accepted if any
+      await Invitation.findOneAndUpdate(
+        { token, status: "pending" },
+        { status: "accepted" }
+      );
       res.status(HttpStatus.OK).json({
         status: "success",
         message: "You are already a member of this workspace",
@@ -254,12 +276,66 @@ export const acceptInvite = async (req: Request, res: Response, next: NextFuncti
     });
     await newMember.save();
 
+    // Mark invitation as accepted
+    await Invitation.findOneAndUpdate(
+      { token, status: "pending" },
+      { status: "accepted" }
+    );
+
     res.status(HttpStatus.CREATED).json({
       status: "success",
       message: "Successfully joined workspace",
       data: {
         workspaceId,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getWorkspaceInvitations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const workspaceId = req.params.workspaceId || req.workspaceId;
+
+    // Auto-update expired invitations
+    await Invitation.updateMany(
+      { workspaceId, status: "pending", expiresAt: { $lt: new Date() } },
+      { status: "expired" }
+    );
+
+    const invitations = await Invitation.find({ workspaceId })
+      .populate("invitedBy", "name email avatar")
+      .sort({ createdAt: -1 });
+
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      results: invitations.length,
+      data: {
+        invitations,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const revokeInvitation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { invitationId } = req.params;
+
+    const invitation = await Invitation.findById(invitationId);
+    if (!invitation) {
+      throw new AppError("Invitation not found", HttpStatus.NOT_FOUND);
+    }
+
+    invitation.status = "revoked";
+    await invitation.save();
+
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      message: "Invitation revoked successfully",
+      data: null,
     });
   } catch (error) {
     next(error);

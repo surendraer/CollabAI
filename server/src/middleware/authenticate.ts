@@ -10,6 +10,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: IUser;
+      accessToken?: string;
     }
   }
 }
@@ -41,8 +42,9 @@ const authenticate = async (
       throw new AppError(ErrorMessages.USER_NOT_FOUND, HttpStatus.UNAUTHORIZED);
     }
 
-    // Attach user to request
+    // Attach user and token to request
     req.user = user;
+    req.accessToken = token;
     next();
   } catch (error) {
     if (error instanceof AppError) {

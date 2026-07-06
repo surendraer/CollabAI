@@ -24,6 +24,12 @@ export const workspaceApi = {
   getWorkspaceMembers: (workspaceId: string) =>
     api.get(`/workspaces/${workspaceId}/members`),
 
+  getWorkspaceInvitations: (workspaceId: string) =>
+    api.get(`/workspaces/${workspaceId}/invitations`),
+
+  revokeInvitation: (workspaceId: string, invitationId: string) =>
+    api.delete(`/workspaces/${workspaceId}/invitations/${invitationId}`),
+
   updateMemberRole: (workspaceId: string, userId: string, data: { role: string }) =>
     api.patch(`/workspaces/${workspaceId}/members/${userId}`, data),
 

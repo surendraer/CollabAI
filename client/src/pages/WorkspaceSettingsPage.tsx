@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, Mail, Copy, Check, Shield, Trash2, Loader2, UserPlus } from "lucide-react";
 import { workspaceApi } from "@/api/workspace.api";
 import { useWorkspaceStore } from "@/store/workspace.store";
@@ -14,9 +14,30 @@ export default function WorkspaceSettingsPage() {
   const [isInviting, setIsInviting] = useState(false);
   const [invitationLink, setInvitationLink] = useState("");
   const [copied, setCopied] = useState(false);
+  const [invitations, setInvitations] = useState<any[]>([]);
+  const [isLoadingInvites, setIsLoadingInvites] = useState(false);
 
   const currentUserRole = members.find((m) => m.userId._id === currentUser?._id)?.role;
   const isPrivileged = currentUserRole === "owner" || currentUserRole === "admin";
+
+  const fetchInvitations = async () => {
+    if (!activeWorkspace) return;
+    setIsLoadingInvites(true);
+    try {
+      const { data } = await workspaceApi.getWorkspaceInvitations(activeWorkspace._id);
+      setInvitations(data.data.invitations);
+    } catch {
+      toast.error("Failed to load invitations");
+    } finally {
+      setIsLoadingInvites(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeWorkspace && isPrivileged) {
+      fetchInvitations();
+    }
+  }, [activeWorkspace, isPrivileged]);
 
   const handleGenerateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,13 +49,26 @@ export default function WorkspaceSettingsPage() {
         email: inviteEmail,
         role: inviteRole,
       });
-      setInvitationLink(data.data.invitationUrl);
+      setInvitationLink(data.data.inviteLink);
       toast.success("Invitation link generated!");
       setInviteEmail("");
+      fetchInvitations();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to invite user");
     } finally {
       setIsInviting(false);
+    }
+  };
+
+  const handleRevokeInvitation = async (invitationId: string) => {
+    if (!activeWorkspace) return;
+    if (!confirm("Revoke this invitation? The link will no longer work.")) return;
+    try {
+      await workspaceApi.revokeInvitation(activeWorkspace._id, invitationId);
+      toast.success("Invitation revoked");
+      fetchInvitations();
+    } catch {
+      toast.error("Failed to revoke invitation");
     }
   };
 
@@ -160,6 +194,79 @@ export default function WorkspaceSettingsPage() {
           </div>
         )}
       </div>
+
+      {/* Pending Invitations */}
+      {isPrivileged && invitations.filter(inv => inv.status === "pending").length > 0 && (
+        <div className="rounded-xl bg-card border border-hairline shadow-soft-lift p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/8">
+              <Mail className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-ink">Pending Invitations</h2>
+              <p className="text-xs text-graphite">Invited people who haven't joined yet</p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-ink">
+              <thead>
+                <tr className="border-b border-hairline">
+                  <th className="pb-3 pr-4 text-[11px] font-semibold uppercase tracking-widest text-graphite">Email</th>
+                  <th className="pb-3 pr-4 text-[11px] font-semibold uppercase tracking-widest text-graphite">Role</th>
+                  <th className="pb-3 pr-4 text-[11px] font-semibold uppercase tracking-widest text-graphite">Expires</th>
+                  <th className="pb-3 text-right text-[11px] font-semibold uppercase tracking-widest text-graphite">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-hairline">
+                {invitations
+                  .filter((inv) => inv.status === "pending")
+                  .map((inv) => {
+                    const expires = new Date(inv.expiresAt);
+                    const isExpired = expires < new Date();
+                    return (
+                      <tr key={inv._id} className="align-middle hover:bg-cloud/50 transition-colors">
+                        <td className="py-3 pr-4 font-semibold text-ink text-sm">{inv.email}</td>
+                        <td className="py-3 pr-4">
+                          <span className="rounded-full bg-cloud px-2.5 py-1 text-[11px] font-semibold capitalize text-charcoal">
+                            {inv.role}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4 text-xs text-graphite">
+                          {isExpired ? (
+                            <span className="text-rose-500 font-semibold">Expired</span>
+                          ) : (
+                            expires.toLocaleDateString() + " " + expires.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          )}
+                        </td>
+                        <td className="py-3 text-right flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              const link = `${window.location.origin}/join/${inv.token}`;
+                              navigator.clipboard.writeText(link);
+                              toast.success("Invite link copied to clipboard!");
+                            }}
+                            className="rounded-lg p-1.5 text-graphite hover:bg-cloud hover:text-ink transition-colors"
+                            title="Copy link"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleRevokeInvitation(inv._id)}
+                            className="rounded-lg p-1.5 text-graphite hover:bg-bloom-rose/30 hover:text-bloom-deep transition-colors"
+                            title="Revoke invitation"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Members Table */}
       <div className="rounded-xl bg-card border border-hairline shadow-soft-lift p-6 space-y-4">

@@ -7,6 +7,8 @@ import {
   deleteWorkspace,
   inviteUser,
   acceptInvite,
+  getWorkspaceInvitations,
+  revokeInvitation,
   getWorkspaceMembers,
   updateMemberRole,
   removeMember,
@@ -38,6 +40,18 @@ router.post(
   authenticate,
   workspaceAuthorize([WorkspaceRoles.OWNER, WorkspaceRoles.ADMIN]),
   inviteUser
+);
+router.get(
+  "/:workspaceId/invitations",
+  authenticate,
+  workspaceAuthorize([WorkspaceRoles.OWNER, WorkspaceRoles.ADMIN]),
+  getWorkspaceInvitations
+);
+router.delete(
+  "/:workspaceId/invitations/:invitationId",
+  authenticate,
+  workspaceAuthorize([WorkspaceRoles.OWNER, WorkspaceRoles.ADMIN]),
+  revokeInvitation
 );
 router.get("/:workspaceId/members", authenticate, workspaceAuthorize(), getWorkspaceMembers);
 router.patch(

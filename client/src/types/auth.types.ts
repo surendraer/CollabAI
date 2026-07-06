@@ -41,4 +41,5 @@ export interface ApiResponse<T = undefined> {
 
 export interface AuthResponse {
   user: User;
+  accessToken?: string;
 }

@@ -63,7 +63,7 @@ export const login = catchAsync(async (req: Request, res: Response) => {
   res.status(HttpStatus.OK).json({
     status: "success",
     message: "Login successful",
-    data: { user },
+    data: { user, accessToken: tokens.accessToken },
   });
 });
 
@@ -112,6 +112,7 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
   res.status(HttpStatus.OK).json({
     status: "success",
     message: "Tokens refreshed",
+    data: { accessToken: tokens.accessToken },
   });
 });
 
@@ -119,7 +120,7 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
 export const getMe = catchAsync(async (req: Request, res: Response) => {
   res.status(HttpStatus.OK).json({
     status: "success",
-    data: { user: req.user },
+    data: { user: req.user, accessToken: req.accessToken },
   });
 });
 

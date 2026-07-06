@@ -5,21 +5,24 @@ import { useWorkspaceStore } from "./workspace.store";
 
 interface AuthState {
   user: User | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setUser: (user: User) => void;
+  setUser: (user: User, accessToken?: string | null) => void;
   clearUser: () => void;
   setLoading: (loading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  accessToken: null,
   isAuthenticated: false,
   isLoading: true,
 
-  setUser: (user) =>
+  setUser: (user, accessToken = null) =>
     set({
       user,
+      accessToken,
       isAuthenticated: true,
       isLoading: false,
     }),
@@ -28,6 +31,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     useWorkspaceStore.getState().clearWorkspaceState();
     set({
       user: null,
+      accessToken: null,
       isAuthenticated: false,
       isLoading: false,
     });

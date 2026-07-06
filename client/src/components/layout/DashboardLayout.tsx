@@ -33,7 +33,7 @@ export function DashboardLayout() {
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
   const [projectModalOpen, setProjectModalOpen] = useState(false);
 
-  const { user } = useAuthStore();
+  const { user, accessToken } = useAuthStore();
   const { mutate: logout } = useLogout();
 
   const {
@@ -53,7 +53,7 @@ export function DashboardLayout() {
 
   useEffect(() => {
     fetchWorkspaces();
-    const socket = socketClient.connect();
+    const socket = socketClient.connect(accessToken || undefined);
 
     socket.on("task:created", (data: any) => {
       const state = useWorkspaceStore.getState();
