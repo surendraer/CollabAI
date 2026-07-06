@@ -12,6 +12,8 @@ import config from "./config";
 import connectDB from "./config/db";
 import logger from "./utils/logger";
 import SocketService from "./services/socket.service";
+import { runMigration } from "./utils/migrate";
+import SchedulerService from "./services/scheduler.service";
 
 
 const startServer = async () => {
@@ -19,6 +21,12 @@ const startServer = async () => {
     logger.info(`Received process.env.PORT: "${process.env.PORT}"`);
     // Connect to MongoDB
     await connectDB();
+
+    // Run database migration
+    await runMigration();
+
+    // Start background deadline scheduler
+    SchedulerService.start();
 
     // Create HTTP Server
     const httpServer = http.createServer(app);

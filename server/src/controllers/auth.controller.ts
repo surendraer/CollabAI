@@ -180,3 +180,14 @@ export const resetPassword = catchAsync(
     });
   }
 );
+
+// ===== GET ONLINE USERS =====
+import SocketService from "../services/socket.service";
+
+export const getOnlineUsers = catchAsync(async (req: Request, res: Response) => {
+  const onlineIds = SocketService.getOnlineUserIds();
+  res.status(HttpStatus.OK).json({
+    status: "success",
+    data: { onlineUserIds: onlineIds },
+  });
+});

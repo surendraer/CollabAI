@@ -74,11 +74,21 @@ export class SocketService {
       logger.info(`🔌 Socket connected: ${user.name} (${socketId})`);
 
       // Track online status
+      const isNewConnection = !this.userSockets.has(user.userId);
       this.activeUsers.set(socketId, user);
       if (!this.userSockets.has(user.userId)) {
         this.userSockets.set(user.userId, new Set());
       }
       this.userSockets.get(user.userId)!.add(socketId);
+
+      if (isNewConnection) {
+        // Broadcast presence online to everyone
+        this.io?.emit("presence:online", {
+          userId: user.userId,
+          name: user.name,
+          avatar: user.avatar,
+        });
+      }
 
       // Join personal room for targeting notifications
       socket.join(`user:${user.userId}`);
@@ -160,6 +170,11 @@ export class SocketService {
   // Helper method to check if a user is online
   public static isUserOnline(userId: string): boolean {
     return this.userSockets.has(userId);
+  }
+
+  // Get list of currently online user IDs
+  public static getOnlineUserIds(): string[] {
+    return Array.from(this.userSockets.keys());
   }
 }
 

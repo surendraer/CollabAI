@@ -16,6 +16,9 @@ import {
 import authenticate from "../middleware/authenticate";
 import workspaceAuthorize from "../middleware/workspaceAuthorize";
 import { WorkspaceRoles } from "../constants";
+import pipelineRoutes from "./pipeline.routes";
+import fileRoutes from "./file.routes";
+import meetingNoteRoutes from "./meetingNote.routes";
 
 const router = Router();
 
@@ -61,5 +64,10 @@ router.patch(
   updateMemberRole
 );
 router.delete("/:workspaceId/members/:userId", authenticate, workspaceAuthorize(), removeMember);
+
+// Nest pipeline, file management, and meeting notes
+router.use("/:workspaceId/pipeline", pipelineRoutes);
+router.use("/:workspaceId/files", fileRoutes);
+router.use("/:workspaceId/notes", meetingNoteRoutes);
 
 export default router;

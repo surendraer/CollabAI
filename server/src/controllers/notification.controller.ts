@@ -1,14 +1,26 @@
+// ============================================================
+// controllers/notification.controller.ts
+// Handles fetching and marking notifications as read for a user.
+// ============================================================
 import { Request, Response, NextFunction } from "express";
 import Notification from "../models/notification.model";
 import AppError from "../utils/AppError";
-import { HttpStatus, ErrorMessages } from "../constants";
+import { HttpStatus } from "../constants";
 
-export const getNotifications = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// ============================================================
+// GET /api/notifications
+// Retrieves the last 30 notifications for the authenticated user.
+// ============================================================
+export const getNotifications = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const notifications = await Notification.find({ recipient: req.user!._id })
-      .populate("sender", "name avatar")
+    const notifications = await Notification.find({ recipientId: req.user!._id })
+      .populate("actorId", "name avatar")
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(30);
 
     res.status(HttpStatus.OK).json({
       status: "success",
@@ -22,13 +34,21 @@ export const getNotifications = async (req: Request, res: Response, next: NextFu
   }
 };
 
-export const markAsRead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// ============================================================
+// PATCH /api/notifications/:notificationId/read
+// Marks a single notification as read.
+// ============================================================
+export const markAsRead = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { notificationId } = req.params;
 
     const notification = await Notification.findOneAndUpdate(
-      { _id: notificationId, recipient: req.user!._id },
-      { read: true },
+      { _id: notificationId, recipientId: req.user!._id },
+      { isRead: true },
       { new: true }
     );
 
@@ -47,9 +67,20 @@ export const markAsRead = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const markAllAsRead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// ============================================================
+// POST /api/notifications/read-all
+// Marks all unread notifications of the user as read.
+// ============================================================
+export const markAllAsRead = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    await Notification.updateMany({ recipient: req.user!._id, read: false }, { read: true });
+    await Notification.updateMany(
+      { recipientId: req.user!._id, isRead: false },
+      { isRead: true }
+    );
 
     res.status(HttpStatus.OK).json({
       status: "success",

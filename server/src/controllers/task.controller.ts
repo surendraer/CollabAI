@@ -6,6 +6,9 @@ import ActivityLog from "../models/activityLog.model";
 import AppError from "../utils/AppError";
 import { HttpStatus, ErrorMessages } from "../constants";
 import SocketService from "../services/socket.service";
+import PipelineStage from "../models/pipelineStage.model";
+import NotificationService from "../services/notification.service";
+import mongoose from "mongoose";
 
 export const createTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -15,9 +18,13 @@ export const createTask = async (req: Request, res: Response, next: NextFunction
       projectId,
       workspaceId,
       assigneeId,
+      assigneeIds,
       priority,
       status,
+      stageId,
       dueDate,
+      type,
+      labels,
     } = req.body;
 
     if (!title || !projectId || !workspaceId) {
@@ -30,19 +37,53 @@ export const createTask = async (req: Request, res: Response, next: NextFunction
       throw new AppError(ErrorMessages.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
 
-    // Get count of existing tasks in this status to append at the end of the column
-    const existingCount = await Task.countDocuments({ projectId, status: status || "todo" });
+    // Resolve stageId (prefer stageId, fallback to finding a matching default stage or first stage)
+    let finalStageId = stageId;
+    if (!finalStageId) {
+      // Find default stage for this workspace
+      const defaultStage = await PipelineStage.findOne({ workspaceId, isDefault: true });
+      if (defaultStage) {
+        finalStageId = defaultStage._id;
+      } else {
+        // Fallback to first stage
+        const firstStage = await PipelineStage.findOne({ workspaceId }).sort({ order: 1 });
+        if (firstStage) {
+          finalStageId = firstStage._id;
+        } else {
+          // If no stages exist yet (e.g. newly migrated workspaces), create default ones
+          const defaultCreated = await PipelineStage.create([
+            { workspaceId, name: "Upcoming Milestones", color: "#8e8e93", order: 0, isDefault: true },
+            { workspaceId, name: "Active Research", color: "#0066cc", order: 1, isDefault: false },
+            { workspaceId, name: "Completed & Approved", color: "#34c759", order: 2, isDefault: false }
+          ]);
+          finalStageId = defaultCreated[0]._id;
+        }
+      }
+    }
+
+    // Map assigneeId / assigneeIds for backward compatibility
+    let finalAssignees: string[] = [];
+    if (Array.isArray(assigneeIds)) {
+      finalAssignees = assigneeIds;
+    } else if (assigneeId) {
+      finalAssignees = [assigneeId];
+    }
+
+    // Get count of existing tasks in this stage to append at the end of the column
+    const existingCount = await Task.countDocuments({ projectId, stageId: finalStageId });
 
     const newTask = new Task({
       title,
       description,
       projectId,
       workspaceId,
-      assigneeId: assigneeId || undefined,
+      stageId: finalStageId,
+      assigneeIds: finalAssignees,
       priority: priority || "medium",
-      status: status || "todo",
       dueDate,
       columnOrder: existingCount,
+      type: type || "task",
+      labels: labels || [],
     });
 
     await newTask.save();
@@ -81,7 +122,7 @@ export const createTask = async (req: Request, res: Response, next: NextFunction
 export const getProjectTasks = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { projectId } = req.params;
-    const { status, priority, assigneeId, search } = req.query;
+    const { stageId, priority, assigneeId, search } = req.query;
 
     const project = await Project.findById(projectId);
     if (!project) {
@@ -97,16 +138,17 @@ export const getProjectTasks = async (req: Request, res: Response, next: NextFun
     // Build filter query
     const filterQuery: any = { projectId };
 
-    if (status) filterQuery.status = status;
+    if (stageId) filterQuery.stageId = stageId;
     if (priority) filterQuery.priority = priority;
-    if (assigneeId) filterQuery.assigneeId = assigneeId;
+    if (assigneeId) filterQuery.assigneeIds = assigneeId;
     if (search) {
       filterQuery.title = { $regex: search, $options: "i" };
     }
 
     const tasks = await Task.find(filterQuery)
-      .populate("assigneeId", "name email avatar")
+      .populate("assigneeIds", "name email avatar")
       .populate("comments.sender", "name avatar")
+      .populate("attachments")
       .sort({ columnOrder: 1 });
 
     res.status(HttpStatus.OK).json({
@@ -124,8 +166,9 @@ export const getProjectTasks = async (req: Request, res: Response, next: NextFun
 export const getTaskDetails = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const task = await Task.findById(req.params.taskId)
-      .populate("assigneeId", "name email avatar")
-      .populate("comments.sender", "name avatar");
+      .populate("assigneeIds", "name email avatar")
+      .populate("comments.sender", "name avatar")
+      .populate("attachments");
 
     if (!task) {
       throw new AppError(ErrorMessages.NOT_FOUND, HttpStatus.NOT_FOUND);
@@ -150,7 +193,19 @@ export const getTaskDetails = async (req: Request, res: Response, next: NextFunc
 
 export const updateTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { title, description, assigneeId, priority, status, dueDate } = req.body;
+    const {
+      title,
+      description,
+      assigneeId,
+      assigneeIds,
+      priority,
+      status, // fallback compatibility
+      stageId,
+      dueDate,
+      reminderAt,
+      labels,
+      type,
+    } = req.body;
     const task = await Task.findById(req.params.taskId);
 
     if (!task) {
@@ -172,21 +227,43 @@ export const updateTask = async (req: Request, res: Response, next: NextFunction
       changes.push(`updated description`);
       task.description = description;
     }
-    if (assigneeId !== undefined && assigneeId !== (task.assigneeId?.toString() || "")) {
-      changes.push(`updated assignment`);
-      task.assigneeId = assigneeId || undefined;
+
+    // Handle assignee updates
+    if (Array.isArray(assigneeIds)) {
+      changes.push("updated assignees");
+      task.assigneeIds = assigneeIds.map((id: string) => new mongoose.Types.ObjectId(id));
+    } else if (assigneeId !== undefined) {
+      changes.push("updated assignee");
+      task.assigneeIds = assigneeId ? [new mongoose.Types.ObjectId(assigneeId)] : [];
     }
+
     if (priority && priority !== task.priority) {
       changes.push(`set priority to "${priority}"`);
       task.priority = priority;
     }
-    if (status && status !== task.status) {
-      changes.push(`moved status to "${status}"`);
-      task.status = status;
+
+    // Handle stage change
+    const targetStageId = stageId || status; // support old parameter as fallback
+    if (targetStageId && targetStageId !== task.stageId?.toString()) {
+      changes.push(`moved stage`);
+      task.stageId = new mongoose.Types.ObjectId(targetStageId);
     }
+
     if (dueDate !== undefined && dueDate !== task.dueDate?.toISOString()) {
       changes.push(`updated due date`);
-      task.dueDate = dueDate || undefined;
+      task.dueDate = dueDate ? new Date(dueDate) : undefined;
+    }
+    if (reminderAt !== undefined && reminderAt !== task.reminderAt?.toISOString()) {
+      changes.push(`updated reminder time`);
+      task.reminderAt = reminderAt ? new Date(reminderAt) : undefined;
+    }
+    if (Array.isArray(labels)) {
+      changes.push(`updated labels`);
+      task.labels = labels;
+    }
+    if (type && type !== task.type) {
+      changes.push(`changed type to "${type}"`);
+      task.type = type;
     }
 
     if (changes.length > 0) {
@@ -226,14 +303,20 @@ export const updateTask = async (req: Request, res: Response, next: NextFunction
  */
 export const moveTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { status, targetOrder } = req.body; // targetOrder: number, status: string
+    const { stageId, status, targetOrder } = req.body; // targetOrder: number, stageId or status: string
     const task = await Task.findById(req.params.taskId);
 
     if (!task) {
       throw new AppError(ErrorMessages.NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
-    const originalStatus = task.status;
+    // Support status fallback for drag and drop moves during API transition
+    const targetStageId = stageId || status;
+    if (!targetStageId) {
+      throw new AppError("stageId is required to move task", HttpStatus.BAD_REQUEST);
+    }
+
+    const originalStageId = task.stageId?.toString() || "";
     const originalOrder = task.columnOrder;
     const workspaceId = task.workspaceId.toString();
 
@@ -243,11 +326,11 @@ export const moveTask = async (req: Request, res: Response, next: NextFunction):
       throw new AppError(ErrorMessages.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
 
-    // Fetch tasks in target status
-    const targetTasks = await Task.find({ projectId: task.projectId, status }).sort({ columnOrder: 1 });
+    // Fetch tasks in target stage
+    const targetTasks = await Task.find({ projectId: task.projectId, stageId: targetStageId }).sort({ columnOrder: 1 });
 
     // Handle re-ordering logic within same column vs different column
-    if (originalStatus === status) {
+    if (originalStageId === targetStageId) {
       // Filter out the moving task first
       const cleanTasks = targetTasks.filter((t) => t._id.toString() !== task._id.toString());
       // Insert at target position
@@ -265,7 +348,7 @@ export const moveTask = async (req: Request, res: Response, next: NextFunction):
       task.columnOrder = targetOrder;
     } else {
       // 1. Update orders in original column
-      const sourceTasks = await Task.find({ projectId: task.projectId, status: originalStatus }).sort({ columnOrder: 1 });
+      const sourceTasks = await Task.find({ projectId: task.projectId, stageId: originalStageId }).sort({ columnOrder: 1 });
       const cleanSource = sourceTasks.filter((t) => t._id.toString() !== task._id.toString());
       const sourceBulkOps = cleanSource.map((t, idx) => ({
         updateOne: {
@@ -282,12 +365,12 @@ export const moveTask = async (req: Request, res: Response, next: NextFunction):
       const targetBulkOps = targetTasks.map((t, idx) => ({
         updateOne: {
           filter: { _id: t._id },
-          update: { columnOrder: idx, status },
+          update: { columnOrder: idx, stageId: targetStageId },
         },
       }));
       await Task.bulkWrite(targetBulkOps);
       
-      task.status = status;
+      task.stageId = new mongoose.Types.ObjectId(targetStageId);
       task.columnOrder = targetOrder;
     }
 
@@ -298,7 +381,7 @@ export const moveTask = async (req: Request, res: Response, next: NextFunction):
       taskId: task._id,
       userId: req.user!._id,
       action: "task_moved",
-      details: `moved task card from "${originalStatus}" to "${status}"`,
+      details: `moved task card within stages`,
     });
     await log.save();
 
@@ -306,9 +389,9 @@ export const moveTask = async (req: Request, res: Response, next: NextFunction):
     SocketService.emitToWorkspace(workspaceId, "task:moved", {
       taskId: task._id,
       projectId: task.projectId,
-      status,
+      stageId: targetStageId,
       targetOrder,
-      originalStatus,
+      originalStageId,
       originalOrder,
       user: { _id: req.user!._id, name: req.user!.name },
     });
@@ -341,7 +424,7 @@ export const deleteTask = async (req: Request, res: Response, next: NextFunction
     await Task.findByIdAndDelete(req.params.taskId);
 
     // Clean up following indexes in the column
-    const columnTasks = await Task.find({ projectId: task.projectId, status: task.status }).sort({ columnOrder: 1 });
+    const columnTasks = await Task.find({ projectId: task.projectId, stageId: task.stageId }).sort({ columnOrder: 1 });
     const bulkOps = columnTasks.map((t, idx) => ({
       updateOne: {
         filter: { _id: t._id },
@@ -396,9 +479,19 @@ export const addComment = async (req: Request, res: Response, next: NextFunction
       throw new AppError(ErrorMessages.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
 
+    // Parse and notify mentioned users
+    const notifiedIds = await NotificationService.notifyMentions(
+      content,
+      req.user!._id.toString(),
+      { workspaceId: task.workspaceId.toString(), taskId: task._id.toString() },
+      `${req.user!.name} mentioned you in a comment on "${task.title}": "${content.substring(0, 40)}${content.length > 40 ? "..." : ""}"`
+    );
+
     const newComment = {
       sender: req.user!._id,
       content,
+      mentions: notifiedIds.map((id) => new mongoose.Types.ObjectId(id)),
+      isEdited: false,
       createdAt: new Date(),
     };
 
@@ -428,6 +521,21 @@ export const addComment = async (req: Request, res: Response, next: NextFunction
         },
       },
     });
+
+    // Notify task assignee(s) if the commenter is someone else
+    const assigneesToNotify = task.assigneeIds.filter(
+      (id) => id.toString() !== req.user!._id.toString() && !notifiedIds.includes(id.toString())
+    );
+
+    for (const assigneeId of assigneesToNotify) {
+      await NotificationService.notify({
+        recipientId: assigneeId.toString(),
+        actorId: req.user!._id.toString(),
+        type: "comment_added",
+        message: `${req.user!.name} commented on your task "${task.title}"`,
+        meta: { workspaceId: task.workspaceId.toString(), taskId: task._id.toString() },
+      });
+    }
 
     res.status(HttpStatus.CREATED).json({
       status: "success",

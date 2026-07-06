@@ -11,26 +11,74 @@ import config from "../config";
 import logger from "../utils/logger";
 import { sendEmail } from "../services/email.service";
 
+import LabMember from "../models/labMember.model";
+import PipelineStage from "../models/pipelineStage.model";
+import { LabRoles } from "../constants";
+
 export const createWorkspace = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const { name, description } = req.body;
+    const { name, description, labId, type, tags } = req.body;
 
-    if (!name) {
-      throw new AppError("Workspace name is required", HttpStatus.BAD_REQUEST);
+    if (!name || !labId) {
+      throw new AppError("Workspace name and Lab ID are required", HttpStatus.BAD_REQUEST);
+    }
+
+    // Verify user is a member of the Lab with manager permissions
+    const labMembership = await LabMember.findOne({ labId, userId: req.user!._id });
+    if (!labMembership) {
+      throw new AppError("You are not a member of this lab", HttpStatus.FORBIDDEN);
+    }
+
+    const hasPermission =
+      labMembership.role === LabRoles.OWNER ||
+      labMembership.role === LabRoles.LAB_ASSISTANT;
+    if (!hasPermission) {
+      throw new AppError("Only the PI or Lab Assistant can create workspaces", HttpStatus.FORBIDDEN);
     }
 
     const newWorkspace = new Workspace({
       name,
       description,
-      owner: req.user!._id,
+      labId,
+      ownerId: req.user!._id,
+      type: type || "paper",
+      tags: tags || [],
     });
 
     await newWorkspace.save({ session });
 
-    // Automatically add creator as Owner
+    // Seed default pipeline stages
+    await PipelineStage.create(
+      [
+        {
+          workspaceId: newWorkspace._id,
+          name: "Upcoming Milestones",
+          color: "#8e8e93",
+          order: 0,
+          isDefault: true,
+        },
+        {
+          workspaceId: newWorkspace._id,
+          name: "Active Research",
+          color: "#0066cc",
+          order: 1,
+          isDefault: false,
+        },
+        {
+          workspaceId: newWorkspace._id,
+          name: "Completed & Approved",
+          color: "#34c759",
+          order: 2,
+          isDefault: false,
+        },
+      ],
+      { session }
+    );
+
+    // Automatically add creator as Owner of the Workspace
     const newMember = new Member({
       workspaceId: newWorkspace._id,
       userId: req.user!._id,

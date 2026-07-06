@@ -1,33 +1,64 @@
+// ============================================================
+// models/task.model.ts
+// Represents a single deliverable (task or milestone) within a
+// workspace. Tasks now reference a PipelineStage instead of a
+// hardcoded status string. Multiple assignees are supported.
+// ============================================================
 import mongoose, { Schema, Document } from "mongoose";
+import { TaskPriority, TaskType } from "../constants";
+import type { TaskPriorityType, TaskTypeValue } from "../constants";
+
+// ===== Sub-document interfaces =====
 
 export interface ISubtask {
   _id?: mongoose.Types.ObjectId;
   title: string;
   isCompleted: boolean;
+  /** Optional specific assignee for this sub-item */
+  assigneeId?: mongoose.Types.ObjectId;
 }
 
 export interface IComment {
   _id?: mongoose.Types.ObjectId;
   sender: mongoose.Types.ObjectId;
   content: string;
+  /** @mentioned user IDs within the comment body */
+  mentions: mongoose.Types.ObjectId[];
+  /** Whether this comment was edited after creation */
+  isEdited: boolean;
   createdAt: Date;
 }
+
+// ===== Main Task interface =====
 
 export interface ITask extends Document {
   title: string;
   description?: string;
   projectId: mongoose.Types.ObjectId;
   workspaceId: mongoose.Types.ObjectId;
-  assigneeId?: mongoose.Types.ObjectId;
-  priority: "high" | "medium" | "low";
-  status: "todo" | "in-progress" | "done";
+  /** References a PipelineStage — replaces hardcoded status enum */
+  stageId: mongoose.Types.ObjectId;
+  /** "task" for day-to-day items, "milestone" for major paper checkpoints */
+  type: TaskTypeValue;
+  /** Supports multiple assignees (common in co-authored work) */
+  assigneeIds: mongoose.Types.ObjectId[];
+  priority: TaskPriorityType;
   dueDate?: Date;
-  columnOrder: number;
+  /** In-app reminder, sent 24h before if set */
+  reminderAt?: Date;
+  /** Free-form labels, e.g. ["literature", "writing", "review"] */
+  labels: string[];
+  /** References to uploaded File documents */
+  attachments: mongoose.Types.ObjectId[];
   subtasks: ISubtask[];
   comments: IComment[];
+  /** Position within the pipeline stage column (for drag-and-drop ordering) */
+  columnOrder: number;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// ===== Sub-document schemas =====
 
 const subtaskSchema = new Schema<ISubtask>({
   title: {
@@ -38,6 +69,10 @@ const subtaskSchema = new Schema<ISubtask>({
   isCompleted: {
     type: Boolean,
     default: false,
+  },
+  assigneeId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
   },
 });
 
@@ -51,12 +86,25 @@ const commentSchema = new Schema<IComment>({
     type: String,
     required: [true, "Comment content is required"],
     trim: true,
+    maxlength: [3000, "Comment must be at most 3000 characters"],
+  },
+  mentions: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+  isEdited: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
+
+// ===== Main Task schema =====
 
 const taskSchema = new Schema<ITask>(
   {
@@ -69,6 +117,7 @@ const taskSchema = new Schema<ITask>(
     description: {
       type: String,
       trim: true,
+      maxlength: [5000, "Task description must be at most 5000 characters"],
     },
     projectId: {
       type: Schema.Types.ObjectId,
@@ -80,39 +129,59 @@ const taskSchema = new Schema<ITask>(
       ref: "Workspace",
       required: [true, "Workspace reference is required"],
     },
-    assigneeId: {
+    stageId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "PipelineStage",
+      required: [true, "Pipeline stage reference is required"],
     },
+    type: {
+      type: String,
+      enum: Object.values(TaskType),
+      default: TaskType.TASK,
+    },
+    assigneeIds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     priority: {
       type: String,
-      enum: ["high", "medium", "low"],
-      default: "medium",
-    },
-    status: {
-      type: String,
-      enum: ["todo", "in-progress", "done"],
-      default: "todo",
+      enum: Object.values(TaskPriority),
+      default: TaskPriority.MEDIUM,
     },
     dueDate: {
       type: Date,
     },
+    reminderAt: {
+      type: Date,
+    },
+    labels: {
+      type: [String],
+      default: [],
+    },
+    attachments: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "File",
+      },
+    ],
+    subtasks: [subtaskSchema],
+    comments: [commentSchema],
     columnOrder: {
       type: Number,
       default: 0,
     },
-    subtasks: [subtaskSchema],
-    comments: [commentSchema],
   },
   {
     timestamps: true,
   }
 );
 
-// Indexes for fast project-board query queries
-taskSchema.index({ projectId: 1, status: 1 });
-taskSchema.index({ workspaceId: 1 });
-taskSchema.index({ assigneeId: 1 });
+// Indexes for efficient board queries
+taskSchema.index({ workspaceId: 1, stageId: 1, columnOrder: 1 });
+taskSchema.index({ workspaceId: 1, dueDate: 1 });
+taskSchema.index({ assigneeIds: 1 });
 
 const Task = mongoose.model<ITask>("Task", taskSchema);
 

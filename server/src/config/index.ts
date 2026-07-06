@@ -28,6 +28,9 @@ const envSchema = z.object({
   PUSHER_KEY: z.string().optional(),
   PUSHER_SECRET: z.string().optional(),
   PUSHER_CLUSTER: z.string().default("mt1"),
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -83,6 +86,11 @@ const config = {
     key: parsed.data.PUSHER_KEY || "",
     secret: parsed.data.PUSHER_SECRET || "",
     cluster: parsed.data.PUSHER_CLUSTER,
+  },
+  cloudinary: {
+    cloudName: parsed.data.CLOUDINARY_CLOUD_NAME || "",
+    apiKey: parsed.data.CLOUDINARY_API_KEY || "",
+    apiSecret: parsed.data.CLOUDINARY_API_SECRET || "",
   },
 } as const;
 

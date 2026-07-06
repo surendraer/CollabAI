@@ -30,6 +30,7 @@ router.post(
 
 // Protected routes
 router.get("/me", authenticate, authController.getMe);
+router.get("/online", authenticate, authController.getOnlineUsers);
 router.post(
   "/resend-verification",
   authenticate,

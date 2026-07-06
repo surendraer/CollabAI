@@ -175,6 +175,40 @@ export class AIService {
       return [];
     }
   }
+
+  /**
+   * AI Literature Review Assistant
+   */
+  public static async generateLiteratureReview(topicOrAbstract: string): Promise<string> {
+    const client = this.getClient();
+    if (!client) {
+      logger.info("🤖 AI Service: Using mock data for literature review.");
+      return `### 📚 Literature Review Outline: "${topicOrAbstract.substring(0, 50)}..."
+- **Core Research Direction**: Exploring hybrid methodologies to solve constraints.
+- **Key Methodologies**: Supervised training on curated academic datasets, fine-tuning embeddings.
+- **Identified Bottlenecks**: High dimensional sparsity, lack of standardized cross-lab benchmarks.
+- **Suggested Queries**: "machine learning abstract mapping", "collaborative citation structures"`;
+    }
+
+    try {
+      const model = client.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const prompt = `You are an elite academic research assistant. Provide a structured, professional literature review synopsis based on this topic or abstract. 
+      Include:
+      1. Major research directions and sub-themes
+      2. Dominant methodologies and approaches
+      3. Open questions, research gaps, or common thesis bottlenecks
+      4. Recommended search queries and Google Scholar keywords.
+      
+      Topic/Abstract: "${topicOrAbstract}"`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text().trim();
+    } catch (error) {
+      logger.error("❌ AI Service Error in generateLiteratureReview:", error);
+      return "Unable to generate literature review outline at this time.";
+    }
+  }
 }
 
 export default AIService;

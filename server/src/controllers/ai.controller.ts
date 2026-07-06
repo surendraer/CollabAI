@@ -44,15 +44,17 @@ export const getSprintSummary = async (req: Request, res: Response, next: NextFu
       throw new AppError(ErrorMessages.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
 
-    // Fetch tasks in this project
-    const tasks = await Task.find({ projectId }).populate("assigneeId", "name");
+    // Fetch tasks and populate stage info + assignees list
+    const tasks = await Task.find({ projectId })
+      .populate("assigneeIds", "name")
+      .populate("stageId", "name");
 
     // Format tasks for AI consumption
     const formattedTasks = tasks.map((t) => ({
       title: t.title,
-      status: t.status,
+      stage: (t.stageId as any)?.name || "Unknown",
       priority: t.priority,
-      assignee: (t.assigneeId as any)?.name || "Unassigned",
+      assignees: t.assigneeIds.map((a: any) => a.name).join(", ") || "Unassigned",
       subtasksCompleted: `${t.subtasks.filter((s) => s.isCompleted).length}/${t.subtasks.length}`,
     }));
 
@@ -63,6 +65,26 @@ export const getSprintSummary = async (req: Request, res: Response, next: NextFu
       status: "success",
       data: {
         summary,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getLiteratureReview = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { topic } = req.body;
+    if (!topic) {
+      throw new AppError("Topic or abstract text is required", HttpStatus.BAD_REQUEST);
+    }
+
+    const review = await AIService.generateLiteratureReview(topic);
+
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      data: {
+        review,
       },
     });
   } catch (error) {
