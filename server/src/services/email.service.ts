@@ -5,7 +5,9 @@ import logger from "../utils/logger";
 
 const resend = config.resend.apiKey ? new Resend(config.resend.apiKey) : null;
 
-const transporter = config.smtp.host
+const isBrevoAPI = !!(config.smtp.pass && config.smtp.pass.startsWith("xsmtpsib-"));
+
+const transporter = config.smtp.host && !isBrevoAPI
   ? nodemailer.createTransport({
       host: config.smtp.host,
       port: config.smtp.port,
@@ -22,7 +24,9 @@ const transporter = config.smtp.host
     })
   : null;
 
-if (transporter) {
+if (isBrevoAPI) {
+  logger.info("📧 Email service: Brevo HTTP API configured");
+} else if (transporter) {
   transporter.verify((error) => {
     if (error) {
       logger.error("❌ SMTP transporter configuration error:", error);
@@ -30,6 +34,10 @@ if (transporter) {
       logger.info("📧 SMTP transporter verified successfully — ready to send emails");
     }
   });
+} else if (resend) {
+  logger.info("📧 Email service: Resend API configured");
+} else {
+  logger.warn("📧 Email service: No email provider configured");
 }
 
 const sendViaBrevoAPI = async (
