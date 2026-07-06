@@ -1,43 +1,19 @@
 import { Outlet, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { BookOpen } from "lucide-react";
 
 export function AuthLayout() {
   return (
-    <div className="flex min-h-screen">
-      {/* Left side — Branding (Notion night band) */}
-      <div className="relative hidden w-1/2 lg:flex lg:flex-col lg:justify-between overflow-hidden bg-secondary p-12">
-        {/* Starfield background */}
-        <div className="absolute inset-0 opacity-20">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 1px)`,
-              backgroundSize: "80px 80px",
-            }}
-          />
-        </div>
-
-        {/* Floating accent shapes */}
-        <motion.div
-          className="absolute right-20 top-40 h-64 w-64 rounded-full bg-accent-sky/20 blur-3xl"
-          animate={{ y: [0, 40, 0], x: [0, -20, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-40 left-20 h-72 w-72 rounded-full bg-accent-purple/15 blur-3xl"
-          animate={{ y: [0, -30, 0], x: [0, 25, 0] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-1/2 right-1/3 h-48 w-48 rounded-full bg-accent-pink/10 blur-3xl"
-          animate={{ y: [0, 20, 0], x: [0, 15, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-
+    <div className="flex min-h-screen bg-[#ffffff] dark:bg-[#161617] text-[#1d1d1f] dark:text-white transition-colors duration-200">
+      {/* Left side — Branding (Apple Dark Canvas Tile) */}
+      <div className="relative hidden w-1/2 lg:flex lg:flex-col lg:justify-between overflow-hidden bg-[#161617] p-12 border-r border-[#333333]">
         {/* Logo */}
         <div className="relative z-10">
-          <h1 className="text-3xl font-bold text-white">🚀 CollabAI</h1>
+          <Link to="/" className="flex items-center gap-2 text-[21px] font-semibold text-white tracking-tight-display">
+            <BookOpen className="h-6 w-6 text-[#2997ff]" />
+            Research Collab
+          </Link>
         </div>
 
         {/* Center content */}
@@ -47,13 +23,13 @@ export function AuthLayout() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <h2 className="text-5xl font-bold leading-tight text-white mb-6" style={{ letterSpacing: "-0.02em" }}>
-              Collaborate smarter,
+            <h2 className="text-[40px] font-semibold leading-[1.1] tracking-tight-display text-white mb-6">
+              Co-author research
               <br />
-              <span className="text-accent-sky">ship faster</span>
+              <span className="text-[#2997ff]">at lighting speed.</span>
             </h2>
-            <p className="max-w-md text-lg text-white/70">
-              Manage projects, track tasks in real-time, chat with your team, and use AI to work smarter—all in one workspace.
+            <p className="max-w-md text-[17px] text-[#cccccc] leading-relaxed">
+              Accelerate your academic publishing. Connect professors, PhD students, and external collaborators in a unified, distraction-free environment.
             </p>
           </motion.div>
 
@@ -65,18 +41,18 @@ export function AuthLayout() {
             transition={{ duration: 0.8, delay: 0.5 }}
           >
             {[
-              "Real-time Kanban boards & task management",
-              "AI-powered insights & task breakdown",
-              "Team chat with instant notifications",
-              "Enterprise-grade security & RBAC",
+              "Interactive Kanban boards for chapters & milestones",
+              "Professor-to-student task reviews & permissions",
+              "Real-time team chat for writing coordination",
+              "Secure document management and source links",
             ].map((feature, i) => (
-              <div key={i} className="flex items-start gap-3 text-white/80">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-card/15 flex-shrink-0 mt-0.5">
-                  <svg className="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              <div key={i} className="flex items-start gap-3 text-[#cccccc]">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 flex-shrink-0 mt-0.5">
+                  <svg className="h-3 w-3 text-[#2997ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="text-sm">{feature}</span>
+                <span className="text-[14px]">{feature}</span>
               </div>
             ))}
           </motion.div>
@@ -84,18 +60,18 @@ export function AuthLayout() {
 
         {/* Bottom */}
         <div className="relative z-10">
-          <p className="text-sm text-white/60">
-            Trusted by teams shipping the future
+          <p className="text-[12px] text-[#8e8e93]">
+            Designed for labs and academic institutions worldwide.
           </p>
         </div>
       </div>
 
       {/* Right side — Form */}
-      <div className="flex w-full flex-col lg:w-1/2 bg-canvas-soft">
+      <div className="flex w-full flex-col lg:w-1/2 bg-[#ffffff] dark:bg-[#161617] transition-colors duration-200">
         {/* Top bar */}
-        <div className="flex justify-between items-center p-6 sm:p-8 border-b border-hairline">
-          <Link to="/" className="text-sm font-medium text-ink hover:text-primary transition-colors flex lg:hidden items-center gap-1">
-            ← Back
+        <div className="flex justify-between items-center p-6 sm:p-8 border-b border-[#e0e0e0] dark:border-[#333333]">
+          <Link to="/" className="text-[14px] font-normal text-[#515154] dark:text-[#cccccc] hover:text-[#0066cc] dark:hover:text-[#2997ff] transition-colors flex lg:hidden items-center gap-1">
+            ← Home
           </Link>
           <ThemeToggle />
         </div>

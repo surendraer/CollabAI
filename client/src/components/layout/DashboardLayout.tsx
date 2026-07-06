@@ -11,6 +11,7 @@ import {
   Plus,
   Users,
   Menu,
+  BookOpen,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
@@ -136,29 +137,29 @@ export function DashboardLayout() {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", enabled: true },
-    { icon: MessageSquare, label: "Team Chat", href: activeWorkspace ? "/chat" : "#", enabled: !!activeWorkspace },
+    { icon: MessageSquare, label: "Real-Time Chat", href: activeWorkspace ? "/chat" : "#", enabled: !!activeWorkspace },
     { icon: BarChart3, label: "Analytics", href: activeWorkspace ? "/analytics" : "#", enabled: !!activeWorkspace },
     { icon: Settings, label: "Settings", href: activeWorkspace ? "/settings" : "#", enabled: !!activeWorkspace },
   ];
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-[#f5f5f7] dark:bg-[#161617]">
       {/* Logo / Workspace Selector */}
-      <div className="relative flex h-[64px] items-center border-b border-hairline px-4">
+      <div className="relative flex h-[64px] items-center border-b border-[#e0e0e0] dark:border-[#333333] px-4 bg-white dark:bg-[#272729]">
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white text-sm font-bold flex-shrink-0">
-            ⚡
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0066cc] text-white flex-shrink-0">
+            <BookOpen className="h-4.5 w-4.5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-graphite">Workspace</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a] dark:text-[#cccccc]">Lab Workspace</p>
             <button
               onClick={() => setWorkspaceDropdownOpen(!workspaceDropdownOpen)}
               className="flex w-full items-center gap-1 text-left"
             >
-              <span className="text-sm font-bold text-ink truncate">
+              <span className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white truncate">
                 {activeWorkspace ? activeWorkspace.name : "Select Workspace"}
               </span>
-              <ChevronDown className="h-3.5 w-3.5 text-graphite flex-shrink-0" />
+              <ChevronDown className="h-3.5 w-3.5 text-[#7a7a7a] flex-shrink-0" />
             </button>
           </div>
         </div>
@@ -172,11 +173,11 @@ export function DashboardLayout() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
                 transition={{ duration: 0.15 }}
-                className="absolute left-4 top-16 z-20 w-56 rounded-lg border border-hairline bg-card shadow-floating-modal"
+                className="absolute left-4 top-16 z-20 w-56 rounded-lg border border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] shadow-apple-product"
               >
                 <div className="p-1.5">
-                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-graphite">
-                    Your Workspaces
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a] dark:text-[#cccccc]">
+                    Your Labs
                   </p>
                   <div className="max-h-44 overflow-y-auto space-y-0.5">
                     {workspaces.map((ws) => (
@@ -185,24 +186,24 @@ export function DashboardLayout() {
                         onClick={() => handleSwitchWorkspace(ws)}
                         className={`w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors ${
                           activeWorkspace?._id === ws._id
-                            ? "bg-primary/8 text-primary font-semibold"
-                            : "text-ink hover:bg-cloud"
+                            ? "bg-[#0066cc]/10 text-[#0066cc] font-semibold"
+                            : "text-[#1d1d1f] dark:text-[#cccccc] hover:bg-[#f5f5f7] dark:hover:bg-[#161617]"
                         }`}
                       >
                         {ws.name}
                       </button>
                     ))}
                   </div>
-                  <div className="mt-1 border-t border-hairline pt-1">
+                  <div className="mt-1 border-t border-[#e0e0e0] dark:border-[#333333] pt-1">
                     <button
                       onClick={() => {
                         setWorkspaceDropdownOpen(false);
                         setWorkspaceModalOpen(true);
                       }}
-                      className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-2 text-left text-sm font-semibold text-primary hover:bg-primary/5"
+                      className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-2 text-left text-sm font-semibold text-[#0066cc] hover:bg-[#0066cc]/5"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      New Workspace
+                      New Laboratory
                     </button>
                   </div>
                 </div>
@@ -229,10 +230,10 @@ export function DashboardLayout() {
                 }}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   !item.enabled
-                    ? "text-steel cursor-not-allowed"
+                    ? "text-[#7a7a7a] opacity-50 cursor-not-allowed"
                     : isActive
-                    ? "bg-primary text-white"
-                    : "text-ink hover:bg-cloud"
+                    ? "bg-[#0066cc]/10 text-[#0066cc] font-semibold"
+                    : "text-[#1d1d1f] dark:text-[#cccccc] hover:bg-[#e8e8ed] dark:hover:bg-[#272729]"
                 }`}
               >
                 <item.icon className="h-4 w-4 flex-shrink-0" />
@@ -242,23 +243,23 @@ export function DashboardLayout() {
           })}
         </div>
 
-        {/* Projects */}
+        {/* Papers & Projects */}
         {activeWorkspace && (
           <div className="space-y-2">
             <div className="flex items-center justify-between px-3">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-graphite">
-                Projects
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a] dark:text-[#cccccc]">
+                Papers & Projects
               </span>
               <button
                 onClick={() => setProjectModalOpen(true)}
-                className="rounded p-0.5 hover:bg-cloud text-graphite hover:text-ink transition-colors"
+                className="rounded p-0.5 hover:bg-[#e8e8ed] dark:hover:bg-[#272729] text-[#7a7a7a] hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
             <div className="space-y-0.5 max-h-40 overflow-y-auto">
               {projects.length === 0 ? (
-                <p className="text-[11px] text-graphite px-3 py-2 italic">No projects yet</p>
+                <p className="text-[11px] text-[#7a7a7a] dark:text-[#cccccc] px-3 py-2 italic">No research projects</p>
               ) : (
                 projects.map((p) => {
                   const isSelected = activeProject?._id === p._id;
@@ -271,8 +272,8 @@ export function DashboardLayout() {
                       }}
                       className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                         isSelected
-                          ? "bg-primary/8 text-primary font-semibold border-l-2 border-primary"
-                          : "text-charcoal hover:bg-cloud hover:text-ink"
+                          ? "bg-[#0066cc]/10 text-[#0066cc] font-semibold border-l-2 border-[#0066cc]"
+                          : "text-[#1d1d1f] dark:text-[#cccccc] hover:bg-[#e8e8ed] dark:hover:bg-[#272729]"
                       }`}
                     >
                       <FolderKanban className="h-3.5 w-3.5 flex-shrink-0" />
@@ -289,9 +290,9 @@ export function DashboardLayout() {
         {members.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-1.5 px-3">
-              <Users className="h-3.5 w-3.5 text-graphite" />
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-graphite">
-                Team
+              <Users className="h-3.5 w-3.5 text-[#7a7a7a]" />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a]">
+                Collaborators
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5 px-3">
@@ -303,13 +304,13 @@ export function DashboardLayout() {
                       src={m.userId.avatar}
                       alt={m.userId.name}
                       className={`h-7 w-7 rounded-full border-2 ${
-                        isOnline ? "border-emerald-400" : "border-hairline"
+                        isOnline ? "border-emerald-400" : "border-[#e0e0e0] dark:border-[#333333]"
                       }`}
                     />
                     {isOnline && (
                       <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-white" />
                     )}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block rounded-lg bg-ink px-2.5 py-1 text-[10px] text-white whitespace-nowrap z-30 shadow-floating-modal">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block rounded-lg bg-[#1d1d1f] text-white px-2.5 py-1 text-[10px] whitespace-nowrap z-30 shadow-apple-product">
                       {m.userId.name}
                     </div>
                   </div>
@@ -321,23 +322,23 @@ export function DashboardLayout() {
       </nav>
 
       {/* User & Logout */}
-      <div className="border-t border-hairline p-3">
+      <div className="border-t border-[#e0e0e0] dark:border-[#333333] p-3 bg-white dark:bg-[#272729]">
         {user && (
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 mb-1">
             <img
               src={user.avatar}
               alt={user.name}
-              className="h-7 w-7 rounded-full border border-hairline"
+              className="h-7 w-7 rounded-full border border-[#e0e0e0] dark:border-[#333333]"
             />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-ink truncate">{user.name}</p>
-              <p className="text-[10px] text-graphite truncate">{user.email}</p>
+              <p className="text-sm font-semibold text-[#1d1d1f] dark:text-white truncate">{user.name}</p>
+              <p className="text-[10px] text-[#7a7a7a] dark:text-[#cccccc] truncate">{user.email}</p>
             </div>
           </div>
         )}
         <button
           onClick={() => { socketClient.disconnect(); logout(); }}
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-graphite hover:bg-bloom-rose/30 hover:text-bloom-deep transition-colors"
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors"
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />
           Sign out
@@ -347,9 +348,9 @@ export function DashboardLayout() {
   );
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-[#ffffff] dark:bg-[#161617] overflow-hidden transition-colors duration-200">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-[248px] flex-shrink-0 flex-col bg-card border-r border-hairline">
+      <aside className="hidden lg:flex w-[248px] flex-shrink-0 flex-col bg-[#f5f5f7] dark:bg-[#161617] border-r border-[#e0e0e0] dark:border-[#333333]">
         <SidebarContent />
       </aside>
 
@@ -361,7 +362,7 @@ export function DashboardLayout() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-ink/30 lg:hidden"
+              className="fixed inset-0 z-40 bg-[#1d1d1f]/30 lg:hidden"
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
@@ -369,7 +370,7 @@ export function DashboardLayout() {
               animate={{ x: 0 }}
               exit={{ x: -248 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed inset-y-0 left-0 z-50 w-[248px] bg-card border-r border-hairline shadow-floating-modal lg:hidden"
+              className="fixed inset-y-0 left-0 z-50 w-[248px] bg-white border-r border-[#e0e0e0] dark:border-[#333333] shadow-apple-product lg:hidden"
             >
               <SidebarContent />
             </motion.aside>
@@ -380,24 +381,24 @@ export function DashboardLayout() {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Top Bar */}
-        <header className="flex h-[64px] items-center justify-between border-b border-hairline bg-card px-4 lg:px-6 flex-shrink-0">
+        <header className="flex h-[64px] items-center justify-between border-b border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] px-4 lg:px-6 flex-shrink-0 transition-colors duration-200">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-hairline text-ink-muted hover:bg-cloud transition-colors"
+              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-[#e0e0e0] dark:border-[#333333] text-[#7a7a7a] hover:bg-[#f5f5f7] dark:hover:bg-[#161617] transition-colors"
             >
               <Menu className="h-4 w-4" />
             </button>
 
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-sm min-w-0">
-              <span className="font-semibold text-ink truncate">
-                {activeWorkspace?.name || "CollabAI"}
+              <span className="font-semibold text-[#1d1d1f] dark:text-white truncate">
+                {activeWorkspace?.name || "Research Collab"}
               </span>
               {activeProject && (
                 <>
-                  <span className="text-steel">/</span>
-                  <span className="font-semibold text-primary truncate">{activeProject.name}</span>
+                  <span className="text-[#7a7a7a]">/</span>
+                  <span className="font-semibold text-[#0066cc] dark:text-[#2997ff] truncate">{activeProject.name}</span>
                 </>
               )}
             </div>
@@ -408,16 +409,16 @@ export function DashboardLayout() {
             <ThemeToggle />
 
             {user && (
-              <div className="flex items-center gap-2 border-l border-hairline pl-3 ml-1">
+              <div className="flex items-center gap-2 border-l border-[#e0e0e0] dark:border-[#333333] pl-3 ml-1">
                 <img
                   src={user.avatar}
                   alt={user.name}
-                  className="h-8 w-8 rounded-full border border-hairline"
+                  className="h-8 w-8 rounded-full border border-[#e0e0e0] dark:border-[#333333]"
                 />
                 <div className="hidden md:block">
-                  <p className="text-sm font-semibold text-ink leading-none">{user.name.split(" ")[0]}</p>
+                  <p className="text-sm font-semibold text-[#1d1d1f] dark:text-white leading-none">{user.name.split(" ")[0]}</p>
                   {activeWorkspace?.role && (
-                    <p className="text-[10px] text-graphite capitalize mt-0.5">{activeWorkspace.role}</p>
+                    <p className="text-[10px] text-[#7a7a7a] dark:text-[#cccccc] capitalize mt-0.5">{activeWorkspace.role}</p>
                   )}
                 </div>
               </div>
@@ -426,7 +427,7 @@ export function DashboardLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-background">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-white dark:bg-[#161617] transition-colors duration-200">
           <div className="max-w-[1200px] mx-auto">
             <Outlet />
           </div>

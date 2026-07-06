@@ -36,10 +36,8 @@ export default function WorkspaceChatPage() {
     let cleanup: (() => void) | undefined;
 
     if (isPusherConfigured()) {
-      // Use Pusher — works across all environments, no cookie issues
       cleanup = subscribeToChatChannel(activeWorkspace._id, addMessage);
     } else {
-      // Fallback: Socket.IO listener
       const socket = socketClient.getSocket();
       if (socket) {
         socket.on("chat:message", addMessage);
@@ -91,33 +89,33 @@ export default function WorkspaceChatPage() {
     new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col rounded-xl border border-hairline bg-card shadow-soft-lift overflow-hidden">
+    <div className="flex h-[calc(100vh-8rem)] flex-col rounded-[18px] border border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] shadow-apple-product overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-hairline px-5 py-3.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/8">
-          <MessageCircle className="h-4 w-4 text-primary" />
+      <div className="flex items-center gap-3 border-b border-[#e0e0e0] dark:border-[#333333] px-5 py-3.5 bg-[#f5f5f7] dark:bg-[#161617]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0066cc]/10 text-[#0066cc]">
+          <MessageCircle className="h-4.5 w-4.5" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-ink">
-            #{activeWorkspace?.name?.toLowerCase().replace(/\s+/g, "-") || "general"}
+          <h2 className="text-sm font-semibold text-[#1d1d1f] dark:text-white">
+            #{activeWorkspace?.name?.toLowerCase().replace(/\s+/g, "-") || "general-discussion"}
           </h2>
-          <p className="text-[11px] text-graphite">Team workspace chat</p>
+          <p className="text-[11px] text-[#7a7a7a] dark:text-[#cccccc]">Real-time research discussion</p>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-cloud">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-white dark:bg-[#161617]">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
-            <Loader2 className="h-7 w-7 animate-spin text-primary" />
+            <Loader2 className="h-7 w-7 animate-spin text-[#0066cc]" />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/8">
-              <MessageCircle className="h-6 w-6 text-primary" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0066cc]/10 text-[#0066cc]">
+              <MessageCircle className="h-6 w-6" />
             </div>
-            <p className="text-sm font-semibold text-ink">No messages yet</p>
-            <p className="text-xs text-graphite">Start the conversation with your team!</p>
+            <p className="text-sm font-semibold text-[#1d1d1f] dark:text-white">No discussions yet</p>
+            <p className="text-xs text-[#7a7a7a] dark:text-[#cccccc]">Start co-authoring discussions with your team!</p>
           </div>
         ) : (
           messages.map((msg, idx) => {
@@ -134,25 +132,25 @@ export default function WorkspaceChatPage() {
                   <img
                     src={msg.sender.avatar}
                     alt={msg.sender.name}
-                    className={`h-7 w-7 rounded-full border border-hairline flex-shrink-0 ${isSameAuthor ? "opacity-0" : ""}`}
+                    className={`h-7 w-7 rounded-full border border-[#e0e0e0] dark:border-[#333333] flex-shrink-0 ${isSameAuthor ? "opacity-0" : ""}`}
                   />
                 )}
                 <div className={`group flex flex-col max-w-[70%] ${isOwn ? "items-end" : "items-start"}`}>
                   {!isOwn && !isSameAuthor && (
-                    <span className="text-[11px] font-semibold text-charcoal mb-1 px-1">
+                    <span className="text-[11px] font-semibold text-[#1d1d1f] dark:text-white mb-1 px-1">
                       {msg.sender.name}
                     </span>
                   )}
                   <div
                     className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words ${
                       isOwn
-                        ? "bg-primary text-white rounded-br-sm"
-                        : "bg-card border border-hairline text-ink rounded-bl-sm shadow-soft-lift"
+                        ? "bg-[#0066cc] text-white rounded-br-sm"
+                        : "bg-[#f5f5f7] dark:bg-[#272729] text-[#1d1d1f] dark:text-white rounded-bl-sm border border-[#e0e0e0] dark:border-[#333333]"
                     }`}
                   >
                     {msg.content}
                   </div>
-                  <span className="text-[10px] text-graphite mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-[10px] text-[#7a7a7a] mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {formatTime(msg.createdAt)}
                   </span>
                 </div>
@@ -164,20 +162,20 @@ export default function WorkspaceChatPage() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-hairline bg-card px-4 py-3">
+      <div className="border-t border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] px-4 py-3">
         <form onSubmit={handleSend} className="flex gap-2">
           <input
             type="text"
             value={newMsg}
             onChange={(e) => setNewMsg(e.target.value)}
             disabled={isLoading || isSending}
-            placeholder={`Message #${activeWorkspace?.name || "workspace"}...`}
-            className="flex-1 rounded-xl border border-hairline bg-cloud px-4 py-2.5 text-sm text-ink placeholder:text-graphite focus:border-primary focus:bg-card focus:outline-none transition-colors"
+            placeholder={`Message #${activeWorkspace?.name || "discussion"}...`}
+            className="flex-1 rounded-full border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-4 py-2.5 text-sm text-[#1d1d1f] dark:text-white placeholder:text-[#7a7a7a] focus:border-[#0066cc] focus:bg-white dark:focus:bg-[#161617] focus:outline-none transition-colors"
           />
           <button
             type="submit"
             disabled={!newMsg.trim() || isSending}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white hover:bg-primary-deep disabled:opacity-40 transition-colors flex-shrink-0"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0066cc] text-white hover:bg-[#0071e3] disabled:opacity-40 transition-colors flex-shrink-0 active-scale"
           >
             {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
