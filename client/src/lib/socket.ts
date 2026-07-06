@@ -2,7 +2,22 @@ import { io, Socket } from "socket.io-client";
 import { useWorkspaceStore } from "../store/workspace.store";
 import { useNotificationStore } from "../store/notification.store";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+const getSocketUrl = () => {
+  const isProduction = import.meta.env.PROD || window.location.hostname !== "localhost";
+  const envSocketUrl = import.meta.env.VITE_SOCKET_URL || "";
+  const envApiUrl = import.meta.env.VITE_API_URL || "";
+
+  // In production, if the socket URL is empty or points to localhost, derive it from the API URL
+  if (isProduction && (envSocketUrl.includes("localhost") || !envSocketUrl)) {
+    if (envApiUrl && !envApiUrl.includes("localhost")) {
+      return envApiUrl.replace(/\/api$/, "");
+    }
+  }
+
+  return envSocketUrl || "http://localhost:5000";
+};
+
+const SOCKET_URL = getSocketUrl();
 
 class SocketClient {
   private socket: Socket | null = null;
@@ -20,7 +35,11 @@ class SocketClient {
     });
 
     this.socket.on("connect", () => {
-      console.log("🔌 Connected to CollabAI real-time server");
+      console.log("🔌 Connected to CollabAI real-time server at:", SOCKET_URL);
+    });
+
+    this.socket.on("connect_error", (error) => {
+      console.error("🔌 Real-time server connection error:", error.message);
     });
 
     // Real-time notifications

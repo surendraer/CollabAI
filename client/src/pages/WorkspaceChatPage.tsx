@@ -25,7 +25,10 @@ export default function WorkspaceChatPage() {
     if (!socket) return;
     const handler = (data: { message: any }) => {
       if (data.message.workspaceId === activeWorkspace?._id) {
-        setMessages((prev) => [...prev, data.message]);
+        setMessages((prev) => {
+          if (prev.some((m) => m._id === data.message._id)) return prev;
+          return [...prev, data.message];
+        });
       }
     };
     socket.on("chat:message", handler);
@@ -53,7 +56,14 @@ export default function WorkspaceChatPage() {
     if (!newMsg.trim() || !activeWorkspace) return;
     setIsSending(true);
     try {
-      await chatApi.sendMessage(activeWorkspace._id, { content: newMsg });
+      const { data } = await chatApi.sendMessage(activeWorkspace._id, { content: newMsg });
+      const sentMessage = data.data.message;
+      if (sentMessage) {
+        setMessages((prev) => {
+          if (prev.some((m) => m._id === sentMessage._id)) return prev;
+          return [...prev, sentMessage];
+        });
+      }
       setNewMsg("");
     } catch {
       toast.error("Failed to send message");
