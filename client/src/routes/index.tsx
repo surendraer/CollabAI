@@ -17,6 +17,10 @@ import WorkspaceChatPage from "@/pages/WorkspaceChatPage";
 import WorkspaceAnalyticsPage from "@/pages/WorkspaceAnalyticsPage";
 import WorkspaceSettingsPage from "@/pages/WorkspaceSettingsPage";
 import JoinWorkspacePage from "@/pages/JoinWorkspacePage";
+import WorkspaceNotesPage from "@/pages/WorkspaceNotesPage";
+import WorkspaceFilesPage from "@/pages/WorkspaceFilesPage";
+import LabCalendarPage from "@/pages/LabCalendarPage";
+import DMsPage from "@/pages/DMsPage";
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -56,6 +60,10 @@ export function AppRoutes() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/projects/:projectId" element={<WorkspaceBoardPage />} />
+          <Route path="/notes" element={<WorkspaceNotesPage />} />
+          <Route path="/files" element={<WorkspaceFilesPage />} />
+          <Route path="/calendar" element={<LabCalendarPage />} />
+          <Route path="/dms" element={<DMsPage />} />
           <Route path="/chat" element={<WorkspaceChatPage />} />
           <Route path="/analytics" element={<WorkspaceAnalyticsPage />} />
           <Route path="/settings" element={<WorkspaceSettingsPage />} />

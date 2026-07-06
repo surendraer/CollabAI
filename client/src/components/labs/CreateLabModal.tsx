@@ -1,58 +1,43 @@
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
-import { workspaceApi } from "@/api/workspace.api";
+import { labApi } from "@/api/lab.api";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import toast from "react-hot-toast";
 
-interface CreateWorkspaceModalProps {
+interface CreateLabModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function CreateWorkspaceModal({ isOpen, onClose }: CreateWorkspaceModalProps) {
+export default function CreateLabModal({ isOpen, onClose }: CreateLabModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState("paper");
-  const [tagInput, setTagInput] = useState("");
+  const [institution, setInstitution] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { workspaces, setWorkspaces, setActiveWorkspace, activeLab } = useWorkspaceStore();
+  const { labs, setLabs, setActiveLab } = useWorkspaceStore();
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !activeLab) {
-      toast.error("Please select a lab first.");
-      return;
-    }
+    if (!name.trim()) return;
 
     setIsLoading(true);
     try {
-      const tags = tagInput.split(",").map(t => t.trim()).filter(Boolean);
+      const { data } = await labApi.createLab({ name, description, institution });
+      const newLab = data.data.lab;
       
-      const { data } = await workspaceApi.createWorkspace({
-        name,
-        description,
-        labId: activeLab._id,
-        type,
-        tags,
-      } as any);
+      // Update labs in store
+      setLabs([...labs, { ...newLab, role: "owner" }]);
+      setActiveLab(newLab);
       
-      const newWorkspace = data.data.workspace;
-      
-      // Update workspaces in store
-      setWorkspaces([...workspaces, { ...newWorkspace, role: "owner" }]);
-      setActiveWorkspace(newWorkspace);
-      
-      toast.success("Research Paper / Workspace created! 🎉");
+      toast.success("Laboratory created successfully! 🧪");
       setName("");
       setDescription("");
-      setType("paper");
-      setTagInput("");
+      setInstitution("");
       onClose();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to create workspace");
+      toast.error(error.response?.data?.message || "Failed to create lab");
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +47,7 @@ export default function CreateWorkspaceModal({ isOpen, onClose }: CreateWorkspac
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-[18px] border border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] p-6 shadow-apple-product">
         <div className="flex items-center justify-between border-b border-[#e0e0e0] dark:border-[#333333] pb-4">
-          <h2 className="text-lg font-semibold text-[#1d1d1f] dark:text-white">New Workspace / Paper</h2>
+          <h2 className="text-lg font-semibold text-[#1d1d1f] dark:text-white">Create Laboratory</h2>
           <button
             onClick={onClose}
             className="rounded-full p-1 text-[#7a7a7a] hover:bg-[#f5f5f7] dark:hover:bg-[#161617] hover:text-[#1d1d1f]"
@@ -74,55 +59,39 @@ export default function CreateWorkspaceModal({ isOpen, onClose }: CreateWorkspac
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-[#7a7a7a] dark:text-[#cccccc]">
-              Paper Title / Project Name
+              Laboratory Name
             </label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. A Survey of Transformer Embeddings"
+              placeholder="e.g. Natural Language Processing Lab"
               className="mt-1.5 w-full rounded-lg border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-3 py-2.5 text-sm text-[#1d1d1f] dark:text-white placeholder:text-[#7a7a7a] focus:border-[#0066cc] focus:bg-white dark:focus:bg-[#161617] focus:outline-none transition-colors"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-[#7a7a7a] dark:text-[#cccccc]">
-                Type
-              </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="mt-1.5 w-full rounded-lg border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-3 py-2.5 text-sm text-[#1d1d1f] dark:text-white focus:border-[#0066cc] focus:bg-white dark:focus:bg-[#161617] focus:outline-none"
-              >
-                <option value="paper">Academic Paper</option>
-                <option value="project">Research Project</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-[#7a7a7a] dark:text-[#cccccc]">
-                Fields / Tags (comma sep)
-              </label>
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                placeholder="e.g. NLP, AI, LLM"
-                className="mt-1.5 w-full rounded-lg border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-3 py-2.5 text-sm text-[#1d1d1f] dark:text-white placeholder:text-[#7a7a7a] focus:border-[#0066cc] focus:bg-white dark:focus:bg-[#161617] focus:outline-none transition-colors"
-              />
-            </div>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-[#7a7a7a] dark:text-[#cccccc]">
+              Institution (Optional)
+            </label>
+            <input
+              type="text"
+              value={institution}
+              onChange={(e) => setInstitution(e.target.value)}
+              placeholder="e.g. Stanford University"
+              className="mt-1.5 w-full rounded-lg border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-3 py-2.5 text-sm text-[#1d1d1f] dark:text-white placeholder:text-[#7a7a7a] focus:border-[#0066cc] focus:bg-white dark:focus:bg-[#161617] focus:outline-none transition-colors"
+            />
           </div>
 
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-[#7a7a7a] dark:text-[#cccccc]">
-              Abstract / Description (Optional)
+              Description (Optional)
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What research gap does this paper aim to address?"
+              placeholder="What research focuses does this laboratory concentrate on?"
               rows={3}
               className="mt-1.5 w-full rounded-lg border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-3 py-2.5 text-sm text-[#1d1d1f] dark:text-white placeholder:text-[#7a7a7a] focus:border-[#0066cc] focus:bg-white dark:focus:bg-[#161617] focus:outline-none transition-colors resize-none"
             />
@@ -142,7 +111,7 @@ export default function CreateWorkspaceModal({ isOpen, onClose }: CreateWorkspac
               className="flex items-center gap-1.5 rounded-full bg-[#0066cc] hover:bg-[#0071e3] px-5 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all active-scale"
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Create Workspace
+              Create Lab
             </button>
           </div>
         </form>

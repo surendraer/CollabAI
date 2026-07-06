@@ -1,20 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Plus, Search, SlidersHorizontal, Calendar, CheckSquare } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, Calendar, CheckSquare, Settings, Edit, Loader2 } from "lucide-react";
 import { taskApi } from "@/api/task.api";
 import { projectApi } from "@/api/project.api";
+import { pipelineApi } from "@/api/pipeline.api";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import CreateTaskModal from "@/components/tasks/CreateTaskModal";
 import TaskDetailDrawer from "@/components/tasks/TaskDetailDrawer";
 import toast from "react-hot-toast";
-
-type TaskStatus = "todo" | "in-progress" | "done";
-
-const COLUMNS: { id: TaskStatus; title: string; dotColor: string; bgColor: string; textColor: string }[] = [
-  { id: "todo", title: "Upcoming Milestones", dotColor: "bg-[#8e8e93]", bgColor: "bg-[#f5f5f7] dark:bg-[#272729]", textColor: "text-[#1d1d1f] dark:text-white" },
-  { id: "in-progress", title: "Active Research", dotColor: "bg-[#0066cc]", bgColor: "bg-[#e5f1ff] dark:bg-[#1d2d3d]", textColor: "text-[#0066cc] dark:text-[#2997ff]" },
-  { id: "done", title: "Completed & Approved", dotColor: "bg-[#34c759]", bgColor: "bg-[#eafaf1] dark:bg-[#1b3d2b]", textColor: "text-[#34c759] dark:text-[#30d158]" },
-];
 
 const PRIORITY_STYLES: Record<string, string> = {
   high: "bg-[#ffdbdb] dark:bg-[#4a1c1c] text-[#ff3b30]",
@@ -26,22 +19,54 @@ export default function WorkspaceBoardPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [taskModalDefaultStatus, setTaskModalDefaultStatus] = useState<TaskStatus>("todo");
+  
+  // Custom board stages state
+  const [activeStageId, setActiveStageId] = useState<string | null>(null);
+  const [isEditingStages, setIsEditingStages] = useState(false);
+  const [newStageName, setNewStageName] = useState("");
+
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
-  const { activeProject, setActiveProject, tasks, setTasks, members } = useWorkspaceStore();
+  const {
+    activeProject,
+    setActiveProject,
+    activeWorkspace,
+    tasks,
+    setTasks,
+    pipelineStages,
+    setPipelineStages,
+    members,
+  } = useWorkspaceStore();
 
   useEffect(() => {
-    if (projectId) loadProjectData(projectId);
+    if (projectId) {
+      loadProjectData(projectId);
+    }
   }, [projectId]);
+
+  useEffect(() => {
+    if (activeWorkspace) {
+      fetchPipelineStages(activeWorkspace._id);
+    }
+  }, [activeWorkspace]);
+
+  const fetchPipelineStages = async (workspaceId: string) => {
+    try {
+      const { data } = await pipelineApi.getPipelineStages(workspaceId);
+      setPipelineStages(data.data.stages);
+    } catch {
+      toast.error("Failed to load custom pipeline stages");
+    }
+  };
 
   const loadProjectData = async (id: string) => {
     try {
       const projectRes = await projectApi.getProjectDetails(id);
       setActiveProject(projectRes.data.data.project);
+      
       const tasksRes = await taskApi.getProjectTasks(id);
       setTasks(tasksRes.data.data.tasks);
     } catch {
@@ -61,33 +86,78 @@ export default function WorkspaceBoardPage() {
 
   const handleDragLeave = () => setDragOverCol(null);
 
-  const handleDrop = async (e: React.DragEvent, targetStatus: TaskStatus) => {
+  const handleDrop = async (e: React.DragEvent, targetStageId: string) => {
     e.preventDefault();
     setDragOverCol(null);
     const taskId = e.dataTransfer.getData("text/plain");
     if (!taskId) return;
 
     const taskToMove = tasks.find((t) => t._id === taskId);
-    if (!taskToMove || taskToMove.status === targetStatus) return;
+    if (!taskToMove || taskToMove.stageId === targetStageId) return;
 
     const originalTasks = [...tasks];
-    setTasks(tasks.map((t) => t._id === taskId ? { ...t, status: targetStatus } : t));
+    
+    // Optimistic update
+    setTasks(tasks.map((t) => t._id === taskId ? { ...t, stageId: targetStageId } : t));
 
     try {
       await taskApi.moveTask(taskId, {
-        status: targetStatus,
-        targetOrder: tasks.filter((t) => t.status === targetStatus).length,
+        stageId: targetStageId,
+        targetOrder: tasks.filter((t) => t.stageId === targetStageId).length,
       });
+      toast.success("Card repositioned");
     } catch {
       setTasks(originalTasks);
       toast.error("Failed to move task");
     }
   };
 
+  const handleCreateStage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStageName.trim() || !activeWorkspace) return;
+
+    try {
+      const { data } = await pipelineApi.createPipelineStage(activeWorkspace._id, {
+        name: newStageName,
+      });
+      setPipelineStages([...pipelineStages, data.data.stage]);
+      setNewStageName("");
+      toast.success("Pipeline column added!");
+    } catch {
+      toast.error("Failed to create pipeline column");
+    }
+  };
+
+  const handleDeleteStage = async (stageId: string) => {
+    if (!activeWorkspace) return;
+    
+    const fallbackStage = pipelineStages.find(s => s._id !== stageId);
+    if (!fallbackStage) {
+      toast.error("Cannot delete the only column");
+      return;
+    }
+
+    if (!confirm("Are you sure? Tasks in this column will be moved to: " + fallbackStage.name)) return;
+
+    try {
+      await pipelineApi.deletePipelineStage(activeWorkspace._id, stageId, fallbackStage._id);
+      setPipelineStages(pipelineStages.filter(s => s._id !== stageId));
+      
+      // Update local task stage pointers
+      setTasks(tasks.map(t => t.stageId === stageId ? { ...t, stageId: fallbackStage._id } : t));
+      toast.success("Column deleted successfully");
+    } catch {
+      toast.error("Failed to delete column");
+    }
+  };
+
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(search.toLowerCase());
     const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
-    const matchesAssignee = assigneeFilter === "all" || task.assigneeId?._id === assigneeFilter;
+    const matchesAssignee =
+      assigneeFilter === "all" ||
+      (task.assigneeIds && task.assigneeIds.some((a: any) => a._id === assigneeFilter)) ||
+      task.assigneeId?._id === assigneeFilter;
     return matchesSearch && matchesPriority && matchesAssignee;
   });
 
@@ -139,7 +209,20 @@ export default function WorkspaceBoardPage() {
           )}
 
           <button
-            onClick={() => { setTaskModalDefaultStatus("todo"); setIsTaskModalOpen(true); }}
+            onClick={() => setIsEditingStages(!isEditingStages)}
+            className="flex items-center gap-1.5 rounded-lg border border-[#e0e0e0] dark:border-[#333333] px-3.5 py-1.5 text-sm font-semibold text-[#7a7a7a] hover:bg-[#f5f5f7] dark:hover:bg-[#161617]"
+          >
+            <Settings className="h-4 w-4" />
+            Manage Columns
+          </button>
+
+          <button
+            onClick={() => {
+              if (pipelineStages.length > 0) {
+                setActiveStageId(pipelineStages[0]._id);
+              }
+              setIsTaskModalOpen(true);
+            }}
             className="flex items-center gap-1.5 rounded-full bg-[#0066cc] hover:bg-[#0071e3] px-4 py-2 text-sm font-medium text-white transition-all active-scale"
           >
             <Plus className="h-4 w-4" />
@@ -148,18 +231,35 @@ export default function WorkspaceBoardPage() {
         </div>
       </div>
 
+      {/* Stage Editor Bar */}
+      {isEditingStages && (
+        <form onSubmit={handleCreateStage} className="flex flex-wrap items-center gap-2 bg-white dark:bg-[#272729] p-4 rounded-xl border border-[#e0e0e0] dark:border-[#333333]">
+          <input
+            type="text"
+            required
+            value={newStageName}
+            onChange={(e) => setNewStageName(e.target.value)}
+            placeholder="New column name (e.g. Peer Review)"
+            className="rounded-lg border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-white focus:outline-none"
+          />
+          <button type="submit" className="rounded-lg bg-[#0066cc] text-white px-4 py-1.5 text-xs font-semibold hover:bg-[#0071e3]">
+            Add Column
+          </button>
+        </form>
+      )}
+
       {/* Kanban Board */}
       <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-3 items-start overflow-x-auto pb-2">
-        {COLUMNS.map((col) => {
-          const colTasks = filteredTasks.filter((t) => t.status === col.id);
-          const isDragOver = dragOverCol === col.id;
+        {pipelineStages.map((col) => {
+          const colTasks = filteredTasks.filter((t) => t.stageId === col._id);
+          const isDragOver = dragOverCol === col._id;
 
           return (
             <div
-              key={col.id}
-              onDragOver={(e) => handleDragOver(e, col.id)}
+              key={col._id}
+              onDragOver={(e) => handleDragOver(e, col._id)}
               onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, col.id)}
+              onDrop={(e) => handleDrop(e, col._id)}
               className={`flex flex-col rounded-[11px] border transition-colors ${
                 isDragOver
                   ? "border-[#0066cc]/50 bg-[#0066cc]/5"
@@ -169,18 +269,29 @@ export default function WorkspaceBoardPage() {
               {/* Column Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#e0e0e0] dark:border-[#333333]">
                 <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full flex-shrink-0 ${col.dotColor}`} />
-                  <span className="text-sm font-semibold text-[#1d1d1f] dark:text-white">{col.title}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${col.bgColor} ${col.textColor}`}>
+                  <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: col.color }} />
+                  <span className="text-sm font-semibold text-[#1d1d1f] dark:text-white truncate max-w-36">{col.name}</span>
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#e0e0e0] dark:bg-[#272729] text-[#7a7a7a] dark:text-[#cccccc]">
                     {colTasks.length}
                   </span>
                 </div>
-                <button
-                  onClick={() => { setTaskModalDefaultStatus(col.id); setIsTaskModalOpen(true); }}
-                  className="rounded-md p-1 text-[#7a7a7a] hover:bg-[#e0e0e0] dark:hover:bg-[#272729] hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
+                
+                {isEditingStages ? (
+                  <button
+                    onClick={() => handleDeleteStage(col._id)}
+                    className="p-1 text-[#ff3b30] hover:bg-[#ff3b30]/10 rounded"
+                    title="Delete column"
+                  >
+                    <Trash2Icon className="h-3.5 w-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { setActiveStageId(col._id); setIsTaskModalOpen(true); }}
+                    className="rounded-md p-1 text-[#7a7a7a] hover:bg-[#e0e0e0] dark:hover:bg-[#272729] hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Tasks */}
@@ -227,24 +338,20 @@ export default function WorkspaceBoardPage() {
                               <span>{new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                             </div>
                           )}
-                          {task.subtasks?.length > 0 && (
-                            <div className="flex items-center gap-1 text-[11px] text-[#7a7a7a]">
-                              <CheckSquare className="h-3 w-3" />
-                              <span>
-                                {task.subtasks.filter((s: any) => s.isCompleted).length}/{task.subtasks.length}
-                              </span>
-                            </div>
-                          )}
                         </div>
 
-                        {task.assigneeId && (
-                          <img
-                            src={task.assigneeId.avatar}
-                            alt={task.assigneeId.name}
-                            className="h-6 w-6 rounded-full border-2 border-white dark:border-[#272729] flex-shrink-0"
-                            title={task.assigneeId.name}
-                          />
-                        )}
+                        {/* Avatars */}
+                        <div className="flex items-center -space-x-1.5">
+                          {task.assigneeIds && task.assigneeIds.map((a: any) => (
+                            <img
+                              key={a._id}
+                              src={a.avatar}
+                              alt={a.name}
+                              className="h-6 w-6 rounded-full border-2 border-white dark:border-[#272729] flex-shrink-0"
+                              title={a.name}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -259,7 +366,7 @@ export default function WorkspaceBoardPage() {
       <CreateTaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
-        defaultStatus={taskModalDefaultStatus}
+        defaultStageId={activeStageId || undefined}
       />
 
       {selectedTaskId && (
@@ -269,5 +376,14 @@ export default function WorkspaceBoardPage() {
         </>
       )}
     </div>
+  );
+}
+
+// Simple internal icon component to avoid import issues
+function Trash2Icon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
   );
 }

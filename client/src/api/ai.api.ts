@@ -12,4 +12,7 @@ export const aiApi = {
 
   parseNotes: (notes: string) =>
     api.post("/ai/meeting-notes", { notes }),
+
+  getLiteratureReview: (topic: string) =>
+    api.post("/ai/literature-review", { topic }),
 };

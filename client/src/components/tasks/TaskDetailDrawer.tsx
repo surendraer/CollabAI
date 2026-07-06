@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Calendar, User, Tag, CheckSquare, MessageSquare, Sparkles, Loader2, Play } from "lucide-react";
+import { X, Calendar, User, Tag, CheckSquare, MessageSquare, Sparkles, Loader2, Play, Plus } from "lucide-react";
 import { taskApi } from "@/api/task.api";
 import { aiApi } from "@/api/ai.api";
 import { useWorkspaceStore } from "@/store/workspace.store";
@@ -17,7 +17,8 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
   const [newSubtask, setNewSubtask] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const { activeWorkspace, activeProject, tasks, setTasks, members } = useWorkspaceStore();
+  
+  const { activeWorkspace, tasks, setTasks, pipelineStages, members } = useWorkspaceStore();
 
   useEffect(() => {
     if (taskId) {
@@ -53,8 +54,18 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
       const updatedList = tasks.map((t) => (t._id === task._id ? { ...t, ...fields } : t));
       setTasks(updatedList);
     } catch {
-      toast.error("Failed to update task");
+      toast.error("Failed to update milestone card");
     }
+  };
+
+  const handleAssigneeToggle = async (userId: string) => {
+    if (!task) return;
+    const currentAssigneeIds = task.assigneeIds ? task.assigneeIds.map((a: any) => a._id) : [];
+    const updatedIds = currentAssigneeIds.includes(userId)
+      ? currentAssigneeIds.filter((id: string) => id !== userId)
+      : [...currentAssigneeIds, userId];
+
+    await handleUpdateField({ assigneeIds: updatedIds });
   };
 
   const handleAddComment = async (e: React.FormEvent) => {
@@ -73,8 +84,6 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
   const handleAddSubtask = async (titleStr: string) => {
     if (!titleStr.trim() || !task) return;
     try {
-      // Since backend pushes subtasks via save, we can just save it using task update or write a custom endpoint.
-      // In task.controller.ts, we toggle but don't have separate subtask add routes, so we update the array
       const updatedSubtasks = [...task.subtasks, { title: titleStr, isCompleted: false }];
       const { data } = await taskApi.updateTask(task._id, { subtasks: updatedSubtasks } as any);
       setTask(data.data.task);
@@ -134,17 +143,17 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
   if (!taskId) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-l border-[var(--border)] bg-[var(--card)] shadow-2xl">
+    <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-l border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] shadow-2xl">
       {/* Header */}
-      <div className="flex h-16 items-center justify-between px-6 border-b border-[var(--border)]">
+      <div className="flex h-16 items-center justify-between px-6 border-b border-[#e0e0e0] dark:border-[#333333]">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Task details
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#7a7a7a]">
+            Milestone details
           </span>
         </div>
         <button
           onClick={onClose}
-          className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
+          className="rounded-full p-1.5 hover:bg-[#f5f5f7] dark:hover:bg-[#161617] text-[#7a7a7a]"
         >
           <X className="h-5 w-5" />
         </button>
@@ -152,7 +161,7 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
 
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[var(--primary)]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#0066cc]" />
         </div>
       ) : task ? (
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -162,29 +171,31 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
               type="text"
               value={task.title}
               onChange={(e) => handleUpdateField({ title: e.target.value })}
-              className="w-full border-none bg-transparent text-xl font-bold text-[var(--foreground)] focus:outline-none focus:ring-0"
+              className="w-full border-none bg-transparent text-xl font-bold text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-0"
             />
           </div>
 
           {/* Properties Grid */}
-          <div className="grid grid-cols-2 gap-4 rounded-lg bg-[var(--background)] p-4 text-sm border border-[var(--border)]">
-            <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
+          <div className="grid grid-cols-2 gap-4 rounded-xl bg-[#f5f5f7] dark:bg-[#161617] p-4 text-xs border border-[#e0e0e0] dark:border-[#333333]">
+            <div className="flex items-center gap-2 text-[#7a7a7a]">
               <Tag className="h-4 w-4" />
-              <span>Status</span>
+              <span>Column</span>
             </div>
             <div>
               <select
-                value={task.status}
-                onChange={(e) => handleUpdateField({ status: e.target.value })}
-                className="rounded border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-xs text-[var(--foreground)] focus:outline-none"
+                value={task.stageId}
+                onChange={(e) => handleUpdateField({ stageId: e.target.value })}
+                className="rounded border border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] px-2 py-0.5 text-xs text-[#1d1d1f] dark:text-white focus:outline-none"
               >
-                <option value="todo">To Do</option>
-                <option value="in-progress">In Progress</option>
-                <option value="done">Done</option>
+                {pipelineStages.map((stage) => (
+                  <option key={stage._id} value={stage._id}>
+                    {stage.name}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
+            <div className="flex items-center gap-2 text-[#7a7a7a]">
               <Tag className="h-4 w-4" />
               <span>Priority</span>
             </div>
@@ -192,7 +203,7 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
               <select
                 value={task.priority}
                 onChange={(e) => handleUpdateField({ priority: e.target.value })}
-                className="rounded border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-xs text-[var(--foreground)] focus:outline-none"
+                className="rounded border border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] px-2 py-0.5 text-xs text-[#1d1d1f] dark:text-white focus:outline-none"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -200,26 +211,7 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
               </select>
             </div>
 
-            <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
-              <User className="h-4 w-4" />
-              <span>Assignee</span>
-            </div>
-            <div>
-              <select
-                value={task.assigneeId?._id || ""}
-                onChange={(e) => handleUpdateField({ assigneeId: e.target.value || null })}
-                className="rounded border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-xs text-[var(--foreground)] focus:outline-none"
-              >
-                <option value="">Unassigned</option>
-                {members.map((m) => (
-                  <option key={m.userId._id} value={m.userId._id}>
-                    {m.userId.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
+            <div className="flex items-center gap-2 text-[#7a7a7a]">
               <Calendar className="h-4 w-4" />
               <span>Due Date</span>
             </div>
@@ -228,37 +220,76 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
                 type="date"
                 value={task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : ""}
                 onChange={(e) => handleUpdateField({ dueDate: e.target.value || null })}
-                className="rounded border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-xs text-[var(--foreground)] focus:outline-none"
+                className="rounded border border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] px-2 py-0.5 text-xs text-[#1d1d1f] dark:text-white focus:outline-none"
               />
+            </div>
+
+            <div className="flex items-center gap-2 text-[#7a7a7a]">
+              <Calendar className="h-4 w-4" />
+              <span>Reminder Date</span>
+            </div>
+            <div>
+              <input
+                type="date"
+                value={task.reminderAt ? new Date(task.reminderAt).toISOString().split("T")[0] : ""}
+                onChange={(e) => handleUpdateField({ reminderAt: e.target.value || null })}
+                className="rounded border border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] px-2 py-0.5 text-xs text-[#1d1d1f] dark:text-white focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Assignees selector list */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7a7a7a]">
+              Co-Authors Assigned
+            </h3>
+            <div className="flex flex-wrap gap-1.5 p-3 rounded-xl border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617]">
+              {members.map((m) => {
+                const currentAssigneeIds = task.assigneeIds ? task.assigneeIds.map((a: any) => a._id) : [];
+                const isAssigned = currentAssigneeIds.includes(m.userId._id);
+                return (
+                  <button
+                    key={m.userId._id}
+                    onClick={() => handleAssigneeToggle(m.userId._id)}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+                      isAssigned
+                        ? "bg-[#0066cc] text-white"
+                        : "bg-white dark:bg-[#272729] border border-[#e0e0e0] dark:border-[#333333] text-[#1d1d1f] dark:text-white hover:bg-[#fafafc]"
+                    }`}
+                  >
+                    {m.userId.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Description
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7a7a7a]">
+              Description / Abstract Details
             </h3>
             <textarea
               value={task.description || ""}
               onChange={(e) => handleUpdateField({ description: e.target.value })}
               placeholder="Add details for this task..."
               rows={3}
-              className="w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)]/50 focus:border-[var(--primary)] focus:outline-none resize-none"
+              className="w-full rounded-lg border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-3 py-2 text-sm text-[#1d1d1f] dark:text-white placeholder:text-[#7a7a7a] focus:border-[#0066cc] focus:bg-white dark:focus:bg-[#161617] focus:outline-none resize-none"
             />
           </div>
 
           {/* AI Helper Panel */}
-          <div className="rounded-xl border border-[var(--primary)]/20 bg-[var(--primary)]/5 p-4 space-y-3">
+          <div className="rounded-xl border border-[#0066cc]/20 bg-[#0066cc]/5 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[var(--primary)]">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#0066cc]">
                 <Sparkles className="h-4.5 w-4.5" />
-                <span>CollabAI Copilot</span>
+                <span>Gemini Research Copilot</span>
               </div>
               <button
                 type="button"
                 onClick={handleRunAiBreakdown}
                 disabled={isAiLoading}
-                className="flex items-center gap-1 text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
+                className="flex items-center gap-1 text-xs font-semibold text-[#0066cc] hover:underline disabled:opacity-50"
               >
                 {isAiLoading ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -272,9 +303,9 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
             </div>
 
             {aiSuggestions.length > 0 && (
-              <div className="space-y-2.5 pt-2 border-t border-[var(--primary)]/10">
-                <p className="text-xs font-medium text-[var(--foreground)]">AI Suggested Subtasks:</p>
-                <ul className="space-y-1.5 text-xs text-[var(--muted-foreground)]">
+              <div className="space-y-2.5 pt-2 border-t border-[#0066cc]/10">
+                <p className="text-xs font-medium text-[#1d1d1f] dark:text-white">AI Suggested Milestones:</p>
+                <ul className="space-y-1.5 text-xs text-[#7a7a7a] dark:text-[#cccccc]">
                   {aiSuggestions.map((s, idx) => (
                     <li key={idx} className="flex items-start gap-1.5">
                       <span>•</span>
@@ -285,7 +316,7 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
                 <button
                   type="button"
                   onClick={handleAddAiSubtasks}
-                  className="w-full rounded-md bg-[var(--primary)] py-1.5 text-xs font-semibold text-white hover:bg-[var(--primary)]/90"
+                  className="w-full rounded-md bg-[#0066cc] py-1.5 text-xs font-semibold text-white hover:bg-[#0071e3]"
                 >
                   Apply Suggested Subtasks
                 </button>
@@ -295,21 +326,21 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
 
           {/* Subtasks Checklist */}
           <div className="space-y-3">
-            <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+            <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#7a7a7a]">
               <CheckSquare className="h-4 w-4" />
               <span>Subtasks ({task.subtasks?.filter((s: any) => s.isCompleted).length || 0}/{task.subtasks?.length || 0})</span>
             </h3>
 
             <div className="space-y-2">
               {task.subtasks?.map((sub: any) => (
-                <div key={sub._id} className="flex items-center gap-2 text-sm text-[var(--foreground)]">
+                <div key={sub._id} className="flex items-center gap-2 text-sm text-[#1d1d1f] dark:text-white">
                   <input
                     type="checkbox"
                     checked={sub.isCompleted}
                     onChange={() => handleToggleSubtask(sub._id)}
-                    className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)]"
+                    className="rounded border-[#e0e0e0] dark:border-[#333333] text-[#0066cc] focus:ring-[#0066cc]"
                   />
-                  <span className={sub.isCompleted ? "text-[var(--muted-foreground)] line-through" : ""}>
+                  <span className={sub.isCompleted ? "text-[#7a7a7a] line-through" : ""}>
                     {sub.title}
                   </span>
                 </div>
@@ -322,12 +353,12 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
                 value={newSubtask}
                 onChange={(e) => setNewSubtask(e.target.value)}
                 placeholder="Add subtask..."
-                className="flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-xs text-[var(--foreground)] focus:border-[var(--primary)] focus:outline-none"
+                className="flex-1 rounded-md border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-white focus:outline-none"
               />
               <button
                 type="button"
                 onClick={() => handleAddSubtask(newSubtask)}
-                className="rounded-md border border-[var(--border)] px-3 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]"
+                className="rounded-md border border-[#e0e0e0] dark:border-[#333333] bg-white dark:bg-[#272729] px-3 text-xs font-semibold text-[#1d1d1f] dark:text-white hover:bg-[#fafafc]"
               >
                 Add
               </button>
@@ -335,10 +366,10 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
           </div>
 
           {/* Comments Section */}
-          <div className="space-y-4 pt-4 border-t border-[var(--border)]">
-            <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+          <div className="space-y-4 pt-4 border-t border-[#e0e0e0] dark:border-[#333333]">
+            <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#7a7a7a]">
               <MessageSquare className="h-4 w-4" />
-              <span>Comments ({task.comments?.length || 0})</span>
+              <span>Comments Thread ({task.comments?.length || 0})</span>
             </h3>
 
             {/* Comment Thread */}
@@ -348,16 +379,16 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
                   <img
                     src={comment.sender.avatar}
                     alt={comment.sender.name}
-                    className="h-6 w-6 rounded-full border border-[var(--border)] mt-0.5"
+                    className="h-6 w-6 rounded-full border border-[#e0e0e0] dark:border-[#333333] mt-0.5"
                   />
-                  <div className="flex-1 space-y-1 bg-[var(--background)] p-2.5 rounded-lg border border-[var(--border)]">
+                  <div className="flex-1 space-y-1 bg-[#f5f5f7] dark:bg-[#161617] p-2.5 rounded-lg border border-[#e0e0e0] dark:border-[#333333]">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-[var(--foreground)]">{comment.sender.name}</span>
-                      <span className="text-[var(--muted-foreground)] scale-90">
+                      <span className="font-semibold text-[#1d1d1f] dark:text-white">{comment.sender.name}</span>
+                      <span className="text-[#7a7a7a] scale-90">
                         {new Date(comment.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="text-[var(--ink-secondary)]">{comment.content}</p>
+                    <p className="text-[#7a7a7a] dark:text-[#cccccc]">{comment.content}</p>
                   </div>
                 </div>
               ))}
@@ -369,13 +400,13 @@ export default function TaskDetailDrawer({ taskId, onClose }: TaskDetailDrawerPr
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Type a comment..."
-                className="flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--foreground)] focus:border-[var(--primary)] focus:outline-none"
+                placeholder="Type a comment, use @name to mention..."
+                className="flex-1 rounded-md border border-[#e0e0e0] dark:border-[#333333] bg-[#f5f5f7] dark:bg-[#161617] px-3 py-2 text-xs text-[#1d1d1f] dark:text-white focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={!newComment.trim()}
-                className="rounded-md bg-[var(--primary)] px-4 text-xs font-semibold text-white hover:bg-[var(--primary)]/90 disabled:opacity-50"
+                className="rounded-md bg-[#0066cc] px-4 text-xs font-semibold text-white hover:bg-[#0071e3] disabled:opacity-50"
               >
                 Send
               </button>

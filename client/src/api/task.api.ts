@@ -7,28 +7,50 @@ export const taskApi = {
     projectId: string;
     workspaceId: string;
     assigneeId?: string;
+    assigneeIds?: string[];
     priority?: "high" | "medium" | "low";
     status?: "todo" | "in-progress" | "done";
+    stageId?: string;
+    type?: "task" | "milestone";
     dueDate?: string;
+    reminderAt?: string;
+    labels?: string[];
   }) => api.post("/tasks", data),
 
-  getProjectTasks: (projectId: string, params?: { status?: string; priority?: string; assigneeId?: string; search?: string }) =>
-    api.get(`/tasks/project/${projectId}`, { params }),
+  getProjectTasks: (
+    projectId: string,
+    params?: { stageId?: string; status?: string; priority?: string; assigneeId?: string; search?: string }
+  ) => api.get(`/tasks/project/${projectId}`, { params }),
 
   getTaskDetails: (taskId: string) =>
     api.get(`/tasks/${taskId}`),
 
-  updateTask: (taskId: string, data: {
-    title?: string;
-    description?: string;
-    assigneeId?: string | null;
-    priority?: "high" | "medium" | "low";
-    status?: "todo" | "in-progress" | "done";
-    dueDate?: string | null;
-  }) => api.patch(`/tasks/${taskId}`, data),
+  updateTask: (
+    taskId: string,
+    data: {
+      title?: string;
+      description?: string;
+      assigneeId?: string | null;
+      assigneeIds?: string[];
+      priority?: "high" | "medium" | "low";
+      status?: "todo" | "in-progress" | "done";
+      stageId?: string;
+      type?: "task" | "milestone";
+      dueDate?: string | null;
+      reminderAt?: string | null;
+      labels?: string[];
+      subtasks?: any[];
+    }
+  ) => api.patch(`/tasks/${taskId}`, data),
 
-  moveTask: (taskId: string, data: { status: "todo" | "in-progress" | "done"; targetOrder: number }) =>
-    api.patch(`/tasks/${taskId}/move`, data),
+  moveTask: (
+    taskId: string,
+    data: {
+      stageId?: string;
+      status?: "todo" | "in-progress" | "done";
+      targetOrder: number;
+    }
+  ) => api.patch(`/tasks/${taskId}/move`, data),
 
   deleteTask: (taskId: string) =>
     api.delete(`/tasks/${taskId}`),

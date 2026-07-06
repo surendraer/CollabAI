@@ -12,17 +12,22 @@ import {
   Users,
   Menu,
   BookOpen,
+  Calendar,
+  FileText,
+  Folder,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { useLogout } from "@/hooks/useAuth";
 import { useWorkspaceStore } from "@/store/workspace.store";
+import { labApi } from "@/api/lab.api";
 import { workspaceApi } from "@/api/workspace.api";
 import { projectApi } from "@/api/project.api";
 import socketClient from "@/lib/socket";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import CreateWorkspaceModal from "@/components/workspaces/CreateWorkspaceModal";
+import CreateLabModal from "@/components/labs/CreateLabModal";
 import CreateProjectModal from "@/components/projects/CreateProjectModal";
 import toast from "react-hot-toast";
 
@@ -30,7 +35,9 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
+  const [labDropdownOpen, setLabDropdownOpen] = useState(false);
+  
+  const [labModalOpen, setLabModalOpen] = useState(false);
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
   const [projectModalOpen, setProjectModalOpen] = useState(false);
 
@@ -38,6 +45,10 @@ export function DashboardLayout() {
   const { mutate: logout } = useLogout();
 
   const {
+    labs,
+    setLabs,
+    activeLab,
+    setActiveLab,
     workspaces,
     setWorkspaces,
     activeWorkspace,
@@ -53,7 +64,7 @@ export function DashboardLayout() {
   } = useWorkspaceStore();
 
   useEffect(() => {
-    fetchWorkspaces();
+    fetchLabs();
     const socket = socketClient.connect(accessToken || undefined);
 
     socket.on("task:created", (data: any) => {
@@ -95,19 +106,39 @@ export function DashboardLayout() {
     } catch { /* silent */ }
   };
 
-  const fetchWorkspaces = async () => {
+  const fetchLabs = async () => {
     try {
-      const { data } = await workspaceApi.getWorkspaces();
+      const { data } = await labApi.getMyLabs();
+      const list = data.data.labs;
+      setLabs(list);
+      if (list.length > 0 && !activeLab) {
+        setActiveLab(list[0]);
+      }
+    } catch {
+      toast.error("Failed to load laboratories");
+    }
+  };
+
+  // Fetch workspaces when active Lab changes
+  useEffect(() => {
+    if (!activeLab) return;
+    fetchWorkspacesForLab(activeLab._id);
+  }, [activeLab]);
+
+  const fetchWorkspacesForLab = async (labId: string) => {
+    try {
+      const { data } = await labApi.getLabWorkspaces(labId);
       const list = data.data.workspaces;
       setWorkspaces(list);
       if (list.length > 0 && !activeWorkspace) {
         setActiveWorkspace(list[0]);
       }
     } catch {
-      toast.error("Failed to load workspaces");
+      toast.error("Failed to load paper workspaces");
     }
   };
 
+  // Fetch projects and members when active Workspace (paper) changes
   useEffect(() => {
     if (!activeWorkspace) return;
     socketClient.joinWorkspace(activeWorkspace._id);
@@ -118,16 +149,39 @@ export function DashboardLayout() {
   const fetchWorkspaceData = async (workspaceId: string) => {
     try {
       const projectRes = await projectApi.getWorkspaceProjects(workspaceId);
-      setProjects(projectRes.data.data.projects);
+      const projList = projectRes.data.data.projects;
+      setProjects(projList);
+      
+      // Select first project/board by default if not set
+      if (projList.length > 0 && !activeProject) {
+        setActiveProject(projList[0]);
+      }
+
       const membersRes = await workspaceApi.getWorkspaceMembers(workspaceId);
       setMembers(membersRes.data.data.members);
     } catch { /* silent */ }
   };
 
-  const handleSwitchWorkspace = (ws: any) => {
-    setActiveWorkspace(ws);
-    setWorkspaceDropdownOpen(false);
+  const handleSwitchLab = (lab: any) => {
+    setActiveLab(lab);
+    setLabDropdownOpen(false);
     navigate("/dashboard");
+  };
+
+  const handleSelectWorkspace = (ws: any) => {
+    setActiveWorkspace(ws);
+    // Fetch projects for this workspace to auto-navigate
+    projectApi.getWorkspaceProjects(ws._id).then(({ data }) => {
+      const projList = data.data.projects;
+      setProjects(projList);
+      if (projList.length > 0) {
+        setActiveProject(projList[0]);
+        navigate(`/projects/${projList[0]._id}`);
+      } else {
+        setActiveProject(null);
+        navigate("/dashboard");
+      }
+    });
   };
 
   const handleSelectProject = (project: any) => {
@@ -135,29 +189,36 @@ export function DashboardLayout() {
     navigate(`/projects/${project._id}`);
   };
 
-  const navItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", enabled: true },
-    { icon: MessageSquare, label: "Real-Time Chat", href: activeWorkspace ? "/chat" : "#", enabled: !!activeWorkspace },
-    { icon: BarChart3, label: "Analytics", href: activeWorkspace ? "/analytics" : "#", enabled: !!activeWorkspace },
-    { icon: Settings, label: "Settings", href: activeWorkspace ? "/settings" : "#", enabled: !!activeWorkspace },
+  const labNavItems = [
+    { icon: LayoutDashboard, label: "Lab Home", href: "/dashboard", enabled: true },
+    { icon: Calendar, label: "Submission Calendar", href: "/calendar", enabled: true },
+    { icon: MessageSquare, label: "Direct Messages", href: "/dms", enabled: true },
+  ];
+
+  const paperNavItems = [
+    { icon: FolderKanban, label: "Milestone Board", href: activeProject ? `/projects/${activeProject._id}` : "#", enabled: !!activeProject },
+    { icon: FileText, label: "Lab Journal / Notes", href: "/notes", enabled: !!activeWorkspace },
+    { icon: Folder, label: "Shared Files", href: "/files", enabled: !!activeWorkspace },
+    { icon: BarChart3, label: "Analytics", href: "/analytics", enabled: !!activeWorkspace },
+    { icon: Settings, label: "Settings", href: "/settings", enabled: !!activeWorkspace },
   ];
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col bg-[#f5f5f7] dark:bg-[#161617]">
-      {/* Logo / Workspace Selector */}
+    <div className="flex h-full flex-col bg-[#f5f5f7] dark:bg-[#161617] border-r border-[#e0e0e0] dark:border-[#333333]">
+      {/* Lab Switcher Selector */}
       <div className="relative flex h-[64px] items-center border-b border-[#e0e0e0] dark:border-[#333333] px-4 bg-white dark:bg-[#272729]">
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0066cc] text-white flex-shrink-0">
             <BookOpen className="h-4.5 w-4.5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a] dark:text-[#cccccc]">Lab Workspace</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a] dark:text-[#cccccc]">Research Laboratory</p>
             <button
-              onClick={() => setWorkspaceDropdownOpen(!workspaceDropdownOpen)}
+              onClick={() => setLabDropdownOpen(!labDropdownOpen)}
               className="flex w-full items-center gap-1 text-left"
             >
-              <span className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white truncate">
-                {activeWorkspace ? activeWorkspace.name : "Select Workspace"}
+              <span className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white truncate">
+                {activeLab ? activeLab.name : "Select Lab"}
               </span>
               <ChevronDown className="h-3.5 w-3.5 text-[#7a7a7a] flex-shrink-0" />
             </button>
@@ -165,9 +226,9 @@ export function DashboardLayout() {
         </div>
 
         <AnimatePresence>
-          {workspaceDropdownOpen && (
+          {labDropdownOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setWorkspaceDropdownOpen(false)} />
+              <div className="fixed inset-0 z-10" onClick={() => setLabDropdownOpen(false)} />
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -177,33 +238,33 @@ export function DashboardLayout() {
               >
                 <div className="p-1.5">
                   <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a] dark:text-[#cccccc]">
-                    Your Labs
+                    Your Laboratories
                   </p>
                   <div className="max-h-44 overflow-y-auto space-y-0.5">
-                    {workspaces.map((ws) => (
+                    {labs.map((l) => (
                       <button
-                        key={ws._id}
-                        onClick={() => handleSwitchWorkspace(ws)}
+                        key={l._id}
+                        onClick={() => handleSwitchLab(l)}
                         className={`w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors ${
-                          activeWorkspace?._id === ws._id
+                          activeLab?._id === l._id
                             ? "bg-[#0066cc]/10 text-[#0066cc] font-semibold"
                             : "text-[#1d1d1f] dark:text-[#cccccc] hover:bg-[#f5f5f7] dark:hover:bg-[#161617]"
                         }`}
                       >
-                        {ws.name}
+                        {l.name}
                       </button>
                     ))}
                   </div>
                   <div className="mt-1 border-t border-[#e0e0e0] dark:border-[#333333] pt-1">
                     <button
                       onClick={() => {
-                        setWorkspaceDropdownOpen(false);
-                        setWorkspaceModalOpen(true);
+                        setLabDropdownOpen(false);
+                        setLabModalOpen(true);
                       }}
                       className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-2 text-left text-sm font-semibold text-[#0066cc] hover:bg-[#0066cc]/5"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      New Laboratory
+                      Create Laboratory
                     </button>
                   </div>
                 </div>
@@ -214,70 +275,62 @@ export function DashboardLayout() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-6">
-        {/* Main Nav */}
+      <nav className="flex-1 overflow-y-auto p-3 space-y-5">
+        {/* Lab Navigation */}
         <div className="space-y-0.5">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.href || 
-              (item.href !== "/dashboard" && location.pathname.startsWith(item.href));
+          {labNavItems.map((item) => {
+            const isActive = location.pathname === item.href;
             return (
               <Link
                 key={item.label}
                 to={item.enabled ? item.href : "#"}
-                onClick={(e) => {
-                  if (!item.enabled) e.preventDefault();
-                  setMobileOpen(false);
-                }}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  !item.enabled
-                    ? "text-[#7a7a7a] opacity-50 cursor-not-allowed"
-                    : isActive
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
                     ? "bg-[#0066cc]/10 text-[#0066cc] font-semibold"
                     : "text-[#1d1d1f] dark:text-[#cccccc] hover:bg-[#e8e8ed] dark:hover:bg-[#272729]"
                 }`}
               >
-                <item.icon className="h-4 w-4 flex-shrink-0" />
+                <item.icon className="h-4.5 w-4.5 flex-shrink-0" />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </div>
 
-        {/* Papers & Projects */}
-        {activeWorkspace && (
-          <div className="space-y-2">
+        {/* Papers List */}
+        {activeLab && (
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between px-3">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a] dark:text-[#cccccc]">
-                Papers & Projects
+                Research Papers
               </span>
               <button
-                onClick={() => setProjectModalOpen(true)}
-                className="rounded p-0.5 hover:bg-[#e8e8ed] dark:hover:bg-[#272729] text-[#7a7a7a] hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
+                onClick={() => setWorkspaceModalOpen(true)}
+                className="rounded p-0.5 hover:bg-[#e8e8ed] dark:hover:bg-[#272729] text-[#7a7a7a] hover:text-[#1d1d1f] transition-colors"
+                title="Create Workspace / Paper"
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="space-y-0.5 max-h-40 overflow-y-auto">
-              {projects.length === 0 ? (
-                <p className="text-[11px] text-[#7a7a7a] dark:text-[#cccccc] px-3 py-2 italic">No research projects</p>
+            <div className="space-y-0.5 max-h-32 overflow-y-auto">
+              {workspaces.length === 0 ? (
+                <p className="text-[11px] text-[#7a7a7a] dark:text-[#cccccc] px-3 py-1 italic">No papers in progress</p>
               ) : (
-                projects.map((p) => {
-                  const isSelected = activeProject?._id === p._id;
+                workspaces.map((ws) => {
+                  const isSelected = activeWorkspace?._id === ws._id;
                   return (
                     <button
-                      key={p._id}
-                      onClick={() => {
-                        handleSelectProject(p);
-                        setMobileOpen(false);
-                      }}
-                      className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      key={ws._id}
+                      onClick={() => handleSelectWorkspace(ws)}
+                      className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-all ${
                         isSelected
-                          ? "bg-[#0066cc]/10 text-[#0066cc] font-semibold border-l-2 border-[#0066cc]"
+                          ? "bg-[#0066cc]/5 text-[#0066cc] font-semibold border-l-2 border-[#0066cc]"
                           : "text-[#1d1d1f] dark:text-[#cccccc] hover:bg-[#e8e8ed] dark:hover:bg-[#272729]"
                       }`}
                     >
-                      <FolderKanban className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="truncate">{p.name}</span>
+                      <BookOpen className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{ws.name}</span>
                     </button>
                   );
                 })
@@ -286,34 +339,72 @@ export function DashboardLayout() {
           </div>
         )}
 
-        {/* Team Members */}
-        {members.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 px-3">
-              <Users className="h-3.5 w-3.5 text-[#7a7a7a]" />
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a]">
-                Collaborators
+        {/* Paper Sub Navigation */}
+        {activeWorkspace && (
+          <div className="space-y-1.5 border-t border-[#e0e0e0] dark:border-[#333333] pt-4">
+            <div className="flex items-center justify-between px-3">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-[#0066cc] truncate max-w-[80%]">
+                {activeWorkspace.name}
               </span>
             </div>
-            <div className="flex flex-wrap gap-1.5 px-3">
-              {members.slice(0, 8).map((m) => {
-                const isOnline = onlineUsers.includes(m.userId._id);
+            <div className="space-y-0.5">
+              {paperNavItems.map((item) => {
+                const isActive = location.pathname === item.href;
                 return (
-                  <div key={m.userId._id} className="relative group">
-                    <img
-                      src={m.userId.avatar}
-                      alt={m.userId.name}
-                      className={`h-7 w-7 rounded-full border-2 ${
-                        isOnline ? "border-emerald-400" : "border-[#e0e0e0] dark:border-[#333333]"
-                      }`}
-                    />
-                    {isOnline && (
-                      <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-white" />
-                    )}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block rounded-lg bg-[#1d1d1f] text-white px-2.5 py-1 text-[10px] whitespace-nowrap z-30 shadow-apple-product">
-                      {m.userId.name}
-                    </div>
-                  </div>
+                  <Link
+                    key={item.label}
+                    to={item.enabled ? item.href : "#"}
+                    onClick={(e) => {
+                      if (!item.enabled) e.preventDefault();
+                      setMobileOpen(false);
+                    }}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      !item.enabled
+                        ? "text-[#7a7a7a] opacity-50 cursor-not-allowed"
+                        : isActive
+                        ? "bg-[#0066cc]/10 text-[#0066cc] font-semibold"
+                        : "text-[#1d1d1f] dark:text-[#cccccc] hover:bg-[#e8e8ed] dark:hover:bg-[#272729]"
+                    }`}
+                  >
+                    <item.icon className="h-4.5 w-4.5 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Sub projects inside the paper */}
+        {activeWorkspace && projects.length > 1 && (
+          <div className="space-y-1.5 border-t border-[#e0e0e0] dark:border-[#333333] pt-4">
+            <div className="flex items-center justify-between px-3">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-[#7a7a7a]">
+                Sub Modules
+              </span>
+              <button
+                onClick={() => setProjectModalOpen(true)}
+                className="rounded p-0.5 hover:bg-[#e8e8ed] dark:hover:bg-[#272729] text-[#7a7a7a] hover:text-[#1d1d1f] transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="space-y-0.5 max-h-28 overflow-y-auto">
+              {projects.map((p) => {
+                const isSelected = activeProject?._id === p._id;
+                return (
+                  <button
+                    key={p._id}
+                    onClick={() => handleSelectProject(p)}
+                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-1 text-left text-sm transition-colors ${
+                      isSelected
+                        ? "bg-[#0066cc]/10 text-[#0066cc] font-semibold"
+                        : "text-[#1d1d1f] dark:text-[#cccccc] hover:bg-[#e8e8ed] dark:hover:bg-[#272729]"
+                    }`}
+                  >
+                    <FolderKanban className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="truncate">{p.name}</span>
+                  </button>
                 );
               })}
             </div>
@@ -321,7 +412,7 @@ export function DashboardLayout() {
         )}
       </nav>
 
-      {/* User & Logout */}
+      {/* User Info & Logout */}
       <div className="border-t border-[#e0e0e0] dark:border-[#333333] p-3 bg-white dark:bg-[#272729]">
         {user && (
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 mb-1">
@@ -331,14 +422,14 @@ export function DashboardLayout() {
               className="h-7 w-7 rounded-full border border-[#e0e0e0] dark:border-[#333333]"
             />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-[#1d1d1f] dark:text-white truncate">{user.name}</p>
-              <p className="text-[10px] text-[#7a7a7a] dark:text-[#cccccc] truncate">{user.email}</p>
+              <p className="text-xs font-semibold text-[#1d1d1f] dark:text-white truncate">{user.name}</p>
+              <p className="text-[9px] text-[#7a7a7a] dark:text-[#cccccc] truncate">{user.email}</p>
             </div>
           </div>
         )}
         <button
           onClick={() => { socketClient.disconnect(); logout(); }}
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors"
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors"
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />
           Sign out
@@ -393,12 +484,12 @@ export function DashboardLayout() {
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-sm min-w-0">
               <span className="font-semibold text-[#1d1d1f] dark:text-white truncate">
-                {activeWorkspace?.name || "Research Collab"}
+                {activeLab?.name || "Laboratory"}
               </span>
-              {activeProject && (
+              {activeWorkspace && (
                 <>
-                  <span className="text-[#7a7a7a]">/</span>
-                  <span className="font-semibold text-[#0066cc] dark:text-[#2997ff] truncate">{activeProject.name}</span>
+                  <span className="text-[#7a7a7a] font-normal">/</span>
+                  <span className="font-semibold text-[#0066cc] dark:text-[#2997ff] truncate">{activeWorkspace.name}</span>
                 </>
               )}
             </div>
@@ -417,8 +508,8 @@ export function DashboardLayout() {
                 />
                 <div className="hidden md:block">
                   <p className="text-sm font-semibold text-[#1d1d1f] dark:text-white leading-none">{user.name.split(" ")[0]}</p>
-                  {activeWorkspace?.role && (
-                    <p className="text-[10px] text-[#7a7a7a] dark:text-[#cccccc] capitalize mt-0.5">{activeWorkspace.role}</p>
+                  {activeLab?.role && (
+                    <p className="text-[9px] text-[#7a7a7a] dark:text-[#cccccc] capitalize mt-0.5">{activeLab.role}</p>
                   )}
                 </div>
               </div>
@@ -435,6 +526,7 @@ export function DashboardLayout() {
       </div>
 
       {/* Modals */}
+      <CreateLabModal isOpen={labModalOpen} onClose={() => setLabModalOpen(false)} />
       <CreateWorkspaceModal isOpen={workspaceModalOpen} onClose={() => setWorkspaceModalOpen(false)} />
       <CreateProjectModal isOpen={projectModalOpen} onClose={() => setProjectModalOpen(false)} />
     </div>
