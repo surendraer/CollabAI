@@ -24,6 +24,10 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   CLIENT_URL: z.string().default("http://localhost:5173"),
   GEMINI_API_KEY: z.string().optional(),
+  PUSHER_APP_ID: z.string().optional(),
+  PUSHER_KEY: z.string().optional(),
+  PUSHER_SECRET: z.string().optional(),
+  PUSHER_CLUSTER: z.string().default("mt1"),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -73,6 +77,12 @@ const config = {
   clientUrl: parsed.data.CLIENT_URL,
   gemini: {
     apiKey: parsed.data.GEMINI_API_KEY || "",
+  },
+  pusher: {
+    appId: parsed.data.PUSHER_APP_ID || "",
+    key: parsed.data.PUSHER_KEY || "",
+    secret: parsed.data.PUSHER_SECRET || "",
+    cluster: parsed.data.PUSHER_CLUSTER,
   },
 } as const;
 

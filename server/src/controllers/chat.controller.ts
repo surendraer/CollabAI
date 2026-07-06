@@ -4,6 +4,7 @@ import Member from "../models/member.model";
 import AppError from "../utils/AppError";
 import { HttpStatus, ErrorMessages } from "../constants";
 import SocketService from "../services/socket.service";
+import { triggerPusher, isPusherConfigured } from "../utils/pusher";
 
 export const getWorkspaceMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -59,10 +60,15 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
     // Populate sender details for immediate UI rendering
     const populatedMessage = await Message.findById(newMessage._id).populate("sender", "name avatar");
 
-    // Broadcast message via Socket.IO
-    SocketService.emitToWorkspace(workspaceId, "chat:message", {
-      message: populatedMessage,
-    });
+    const payload = { message: populatedMessage };
+
+    // Broadcast via Pusher (preferred — works cross-domain without cookie issues)
+    if (isPusherConfigured()) {
+      await triggerPusher(`workspace-${workspaceId}`, "chat:message", payload);
+    }
+
+    // Also broadcast via Socket.IO (fallback / local dev)
+    SocketService.emitToWorkspace(workspaceId, "chat:message", payload);
 
     res.status(HttpStatus.CREATED).json({
       status: "success",

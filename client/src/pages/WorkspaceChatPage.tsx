@@ -4,6 +4,7 @@ import { chatApi } from "@/api/chat.api";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import { useAuthStore } from "@/store/auth.store";
 import socketClient from "@/lib/socket";
+import { isPusherConfigured, subscribeToChatChannel } from "@/lib/pusher";
 import toast from "react-hot-toast";
 
 export default function WorkspaceChatPage() {
@@ -21,18 +22,32 @@ export default function WorkspaceChatPage() {
   }, [activeWorkspace]);
 
   useEffect(() => {
-    const socket = socketClient.getSocket();
-    if (!socket) return;
-    const handler = (data: { message: any }) => {
-      if (data.message.workspaceId === activeWorkspace?._id) {
+    if (!activeWorkspace) return;
+
+    const addMessage = (data: { message: any }) => {
+      if (data.message.workspaceId === activeWorkspace._id) {
         setMessages((prev) => {
           if (prev.some((m) => m._id === data.message._id)) return prev;
           return [...prev, data.message];
         });
       }
     };
-    socket.on("chat:message", handler);
-    return () => { socket.off("chat:message", handler); };
+
+    let cleanup: (() => void) | undefined;
+
+    if (isPusherConfigured()) {
+      // Use Pusher — works across all environments, no cookie issues
+      cleanup = subscribeToChatChannel(activeWorkspace._id, addMessage);
+    } else {
+      // Fallback: Socket.IO listener
+      const socket = socketClient.getSocket();
+      if (socket) {
+        socket.on("chat:message", addMessage);
+        cleanup = () => socket.off("chat:message", addMessage);
+      }
+    }
+
+    return () => { if (cleanup) cleanup(); };
   }, [activeWorkspace]);
 
   useEffect(() => {
