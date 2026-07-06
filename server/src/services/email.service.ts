@@ -7,7 +7,7 @@ const resend = config.resend.apiKey ? new Resend(config.resend.apiKey) : null;
 
 const isBrevoAPI = !!(config.smtp.pass && config.smtp.pass.startsWith("xsmtpsib-"));
 
-const transporter = config.smtp.host && !isBrevoAPI
+const transporter = config.smtp.host
   ? nodemailer.createTransport({
       host: config.smtp.host,
       port: config.smtp.port,
@@ -25,19 +25,23 @@ const transporter = config.smtp.host && !isBrevoAPI
   : null;
 
 if (isBrevoAPI) {
-  logger.info("📧 Email service: Brevo HTTP API configured");
+  logger.info("📧 Email service: Brevo HTTP API configured (SMTP fallback active)");
 } else if (transporter) {
-  transporter.verify((error) => {
-    if (error) {
-      logger.error("❌ SMTP transporter configuration error:", error);
-    } else {
-      logger.info("📧 SMTP transporter verified successfully — ready to send emails");
-    }
-  });
+  logger.info("📧 Email service: SMTP transporter configured");
 } else if (resend) {
   logger.info("📧 Email service: Resend API configured");
 } else {
   logger.warn("📧 Email service: No email provider configured");
+}
+
+if (transporter) {
+  transporter.verify((error) => {
+    if (error) {
+      logger.warn(`⚠️ SMTP transporter verification failed (SMTP ports might be blocked): ${error.message}`);
+    } else {
+      logger.info("📧 SMTP transporter verified successfully — ready to send emails");
+    }
+  });
 }
 
 const sendViaBrevoAPI = async (
